@@ -1,5 +1,6 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
+import br.uefs.larsid.dlt.iot.soft.services.MQTTClientService;
 import java.util.Arrays;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -11,8 +12,6 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
-import br.uefs.larsid.dlt.iot.soft.services.MQTTClientService;
-
 public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
   private String ip;
@@ -23,26 +22,6 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   private MqttClient mqttClient;
   private MqttConnectOptions mqttOptions;
   private boolean debugModeValue;
-
-  // public MQTTClient(String ip, String port, String userName, String password) {
-  //   this.ip = ip;
-  //   this.port = port;
-  //   this.userName = userName;
-  //   this.password = password;
-  //   this.serverURI = String.format("tcp://%s:%s", this.ip, this.port);
-
-  //   mqttOptions = new MqttConnectOptions();
-  //   mqttOptions.setMaxInflight(200);
-  //   mqttOptions.setConnectionTimeout(3);
-  //   mqttOptions.setKeepAliveInterval(10);
-  //   mqttOptions.setAutomaticReconnect(true);
-  //   mqttOptions.setCleanSession(false);
-
-  //   if (userName != null && password != null) {
-  //     mqttOptions.setUserName(this.userName);
-  //     mqttOptions.setPassword(this.password.toCharArray());
-  //   }
-  // }
 
   public MQTTClient() {}
 
@@ -68,6 +47,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   /**
    * O cliente conecta-se a um servidor MQTT usando as opções especificadas.
    */
+  @Override
   public void connect() {
     try {
       printlnDebug(
@@ -95,10 +75,12 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   /**
    * O cliente desconecta-se do servidor.
    */
+  @Override
   public void disconnect() {
     if (mqttClient == null || !mqttClient.isConnected()) {
       return;
     }
+
     try {
       mqttClient.disconnect();
       mqttClient.close();
@@ -121,6 +103,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
    * @return IMqttToken - Mecanismo para rastrear o término de uma tarefa
    *         assíncrona.
    */
+  @Override
   public IMqttToken subscribe(
     int qos,
     IMqttMessageListener listener,
@@ -137,6 +120,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
       qualityOfServices[i] = qos;
       listeners[i] = listener;
     }
+
     try {
       return mqttClient.subscribeWithResponse(
         topics,
@@ -160,10 +144,12 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
    *
    * @param topics String... - Tópicos para cancelar a assinatura.
    */
+  @Override
   public void unsubscribe(String... topics) {
     if (mqttClient == null || !mqttClient.isConnected() || topics.length == 0) {
       return;
     }
+
     try {
       mqttClient.unsubscribe(topics);
     } catch (MqttException ex) {
@@ -185,6 +171,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
    * @param payload byte[] - Matriz de bytes da mensagem.
    * @param qos int - Qualidade do serviço.
    */
+  @Override
   public void publish(String topic, byte[] payload, int qos) {
     publish(topic, payload, qos, false);
   }
@@ -242,12 +229,12 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
     if (isDebugModeValue()) System.out.println(str);
   }
 
-  public void setDebugModeValue(boolean debugModeValue) {
-    this.debugModeValue = debugModeValue;
-  }
-
   public boolean isDebugModeValue() {
     return debugModeValue;
+  }
+
+  public void setDebugModeValue(boolean debugModeValue) {
+    this.debugModeValue = debugModeValue;
   }
 
   public String getIp() {
