@@ -11,10 +11,13 @@
     <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
-        <property name="MQTTClientHost" ref="" />
-        <property name="MQTTClientUp" ref="" />
+        <property name="MQTTClientHost" ref="serviceMQTTHost" />
+        <property name="MQTTClientUp" ref="serviceMQTTUp" />
         <property name="childs" value="${childs}" />
     </bean>
+
+    <service id="serviceMQTTHost" ref="MQTTClientHost" interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
+    <service id="serviceMQTTUp" ref="MQTTClientUp" interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
 
     <bean id="MQTTClientHost" class="package br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
@@ -31,6 +34,23 @@
 		<property name="userName" value="${user_up}" ></property>
 		<property name="password" value="${pass_up}" ></property>
     </bean>
+
+    <cm:property-placeholder
+		persistent-id="br.ufba.dcc.wiser.soft_iot.fog_broker"
+		update-strategy="reload">
+		<cm:default-properties>
+			<cm:property name="ip" value="localhost" />
+			<cm:property name="port" value="1884" />
+			<cm:property name="user" value="karaf" />
+			<cm:property name="pass" value="karaf" />
+			<cm:property name="ip_up" value="localhost" />
+			<cm:property name="port_up" value="1885" />
+			<cm:property name="user_up" value="karaf" />
+			<cm:property name="pass_up" value="karaf" />
+			<cm:property name="debugModeValue" value="true" ></cm:property>
+			<cm:property name="childs" value="1"></cm:property>
+		</cm:default-properties>
+	</cm:property-placeholder>
 
 
 </blueprint>
