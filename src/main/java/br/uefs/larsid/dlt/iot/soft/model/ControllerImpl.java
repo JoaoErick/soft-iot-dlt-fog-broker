@@ -4,8 +4,6 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +84,8 @@ public class ControllerImpl implements Controller {
         }
       }
     ); */
+
+    Object[] devicesAndScoresSet = devicesAndScoresMap.entrySet().toArray();
     Map<String, Integer> top_k = new HashMap<String, Integer>();
 
     // Pegando os k piores ...
@@ -94,15 +94,16 @@ public class ControllerImpl implements Controller {
       top_k.put(e.getKey(), e.getValue());
     } */
     for (int i = 0; i < k; i++) {
-      Map.Entry<String, Integer> e = devicesAndScoresMap[i];
+      Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) devicesAndScoresSet[i];
       top_k.put(e.getKey(), e.getValue());
     }
 
-    System.out.println("TOP_K => " + top_k.toString());
-    System.out.println("==== Fog gateway -> Fog UP gateway  ====");
-    byte[] b = top_k.toString().getBytes();
-    //clienteMQTT_UP.publicar("TOP_K_HEALTH_RES/" + id, b, 1);
+    printlnDebug("TOP_K RESULT => " + top_k.toString());
 
+    printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
+
+    byte[] b = top_k.toString().getBytes();
+    MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, b, 1);
   }
 
   @Override
