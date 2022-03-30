@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0"
+           xsi:schemaLocation="
+             http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd
+             http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+    
+    <service id="serviceController" ref="myBean" interface="br.uefs.larsid.dlt.iot.soft.services.Controller"/>
+    
+    <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
+        init-method="start" destroy-method="stop">
+        <property name="debugModeValue" value="${debugModeValue}" />
+        <property name="MQTTClientHost" ref="" />
+        <property name="MQTTClientUp" ref="" />
+        <property name="childs" value="${childs}" />
+    </bean>
+
+    <bean id="MQTTClientHost" class="package br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+        init-method="start" destroy-method="stop">
+        <property name="ip" value="${ip}" ></property>
+		<property name="port" value="${port}" ></property>
+		<property name="userName" value="${user}" ></property>
+		<property name="password" value="${pass}" ></property>
+    </bean>
+
+    <bean id="MQTTClientUp" class="package br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+        init-method="start" destroy-method="stop">
+        <property name="ip" value="${ip_up}" ></property>
+		<property name="port" value="${port_up}" ></property>
+		<property name="userName" value="${user_up}" ></property>
+		<property name="password" value="${pass_up}" ></property>
+    </bean>
+
+
+</blueprint>
