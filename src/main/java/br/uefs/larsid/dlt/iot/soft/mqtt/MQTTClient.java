@@ -204,10 +204,14 @@ public class MQTTClient implements MqttCallbackExtended {
   }
 
   private void printlnDebug(String str) {
-    if (debugModeValue) System.out.println(str);
+    if (isDebugModeValue()) System.out.println(str);
   }
 
   public void setDebugModeValue(boolean debugModeValue) {
     this.debugModeValue = debugModeValue;
+  }
+
+  public boolean isDebugModeValue() {
+    return debugModeValue;
   }
 }
