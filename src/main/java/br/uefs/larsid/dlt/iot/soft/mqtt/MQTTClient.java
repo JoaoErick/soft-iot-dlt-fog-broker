@@ -13,25 +13,54 @@ import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 public class MQTTClient implements MqttCallbackExtended {
 
+  private String ip;
+  private String port;
+  private String userName;
+  private String password;
   private String serverURI;
   private MqttClient mqttClient;
-  private final MqttConnectOptions mqttOptions;
+  private MqttConnectOptions mqttOptions;
   private boolean debugModeValue;
 
-  public MQTTClient(String serverURI, String userName, String password) {
-    this.serverURI = serverURI;
+  // public MQTTClient(String ip, String port, String userName, String password) {
+  //   this.ip = ip;
+  //   this.port = port;
+  //   this.userName = userName;
+  //   this.password = password;
+  //   this.serverURI = String.format("tcp://%s:%s", this.ip, this.port);
 
-    mqttOptions = new MqttConnectOptions();
-    mqttOptions.setMaxInflight(200);
-    mqttOptions.setConnectionTimeout(3);
-    mqttOptions.setKeepAliveInterval(10);
-    mqttOptions.setAutomaticReconnect(true);
-    mqttOptions.setCleanSession(false);
+  //   mqttOptions = new MqttConnectOptions();
+  //   mqttOptions.setMaxInflight(200);
+  //   mqttOptions.setConnectionTimeout(3);
+  //   mqttOptions.setKeepAliveInterval(10);
+  //   mqttOptions.setAutomaticReconnect(true);
+  //   mqttOptions.setCleanSession(false);
 
-    if (userName != null && password != null) {
-      mqttOptions.setUserName(userName);
-      mqttOptions.setPassword(password.toCharArray());
-    }
+  //   if (userName != null && password != null) {
+  //     mqttOptions.setUserName(this.userName);
+  //     mqttOptions.setPassword(this.password.toCharArray());
+  //   }
+  // }
+
+  public MQTTClient() {}
+
+  public void start() {
+    printlnDebug("Starting SOFT-IoT-Fog-Broker bundle...");
+    this.serverURI = String.format("tcp://%s:%s", this.ip, this.port);
+
+    this.mqttOptions = new MqttConnectOptions();
+    this.mqttOptions.setMaxInflight(200);
+    this.mqttOptions.setConnectionTimeout(3);
+    this.mqttOptions.setKeepAliveInterval(10);
+    this.mqttOptions.setAutomaticReconnect(true);
+    this.mqttOptions.setCleanSession(false);
+
+    this.mqttOptions.setUserName(this.userName);
+    this.mqttOptions.setPassword(this.password.toCharArray());
+  }
+
+  public void stop() {
+    printlnDebug("Finishing SOFT-IoT-Fog-Broker bundle...");
   }
 
   /**
@@ -39,21 +68,25 @@ public class MQTTClient implements MqttCallbackExtended {
    */
   public void connect() {
     try {
-      printlnDebug("Trying to connect to the MQTT broker " + serverURI + "...");
+      printlnDebug(
+        "Trying to connect to the MQTT broker " + this.serverURI + "..."
+      );
 
-      mqttClient =
+      this.mqttClient =
         new MqttClient(
-          serverURI,
+          this.serverURI,
           String.format("cliente_java_%d", System.currentTimeMillis()),
           new MqttDefaultFilePersistence(System.getProperty("java.io.tmpdir"))
         );
 
-      mqttClient.setCallback(this);
-      mqttClient.connect(mqttOptions);
+      this.mqttClient.setCallback(this);
+      this.mqttClient.connect(mqttOptions);
 
       printlnDebug("Connected to the MQTT broker!");
     } catch (MqttException ex) {
-      printlnDebug("Error connecting to MQTT broker " + serverURI + " - " + ex);
+      printlnDebug(
+        "Error connecting to MQTT broker " + this.serverURI + " - " + ex
+      );
     }
   }
 
@@ -213,5 +246,37 @@ public class MQTTClient implements MqttCallbackExtended {
 
   public boolean isDebugModeValue() {
     return debugModeValue;
+  }
+
+  public String getIp() {
+    return ip;
+  }
+
+  public void setIp(String ip) {
+    this.ip = ip;
+  }
+
+  public String getPort() {
+    return port;
+  }
+
+  public void setPort(String port) {
+    this.port = port;
+  }
+
+  public String getUserName() {
+    return userName;
+  }
+
+  public void setUserName(String userName) {
+    this.userName = userName;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 }
