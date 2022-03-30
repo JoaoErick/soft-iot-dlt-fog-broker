@@ -16,10 +16,13 @@
         <property name="childs" value="${childs}" />
     </bean>
 
-    <service id="serviceMQTTHost" ref="MQTTClientHost" interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
-    <service id="serviceMQTTUp" ref="MQTTClientUp" interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
+    <service id="serviceMQTTHost" ref="MQTTClientHost" 
+        interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
 
-    <bean id="MQTTClientHost" class="package br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <service id="serviceMQTTUp" ref="MQTTClientUp" 
+        interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
+
+    <bean id="MQTTClientHost" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="ip" value="${ip}" ></property>
 		<property name="port" value="${port}" ></property>
@@ -27,7 +30,7 @@
 		<property name="password" value="${pass}" ></property>
     </bean>
 
-    <bean id="MQTTClientUp" class="package br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <bean id="MQTTClientUp" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="ip" value="${ip_up}" ></property>
 		<property name="port" value="${port_up}" ></property>
