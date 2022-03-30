@@ -11,7 +11,9 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
-public class MQTTClient implements MqttCallbackExtended {
+import br.uefs.larsid.dlt.iot.soft.services.MQTTClientService;
+
+public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
   private String ip;
   private String port;
@@ -197,7 +199,7 @@ public class MQTTClient implements MqttCallbackExtended {
    * @param retained boolean - Determina se a mensagem deve ou não
    * ser retida no servidor.
    */
-  public synchronized void publish(
+  private synchronized void publish(
     String topic,
     byte[] payload,
     int qos,
