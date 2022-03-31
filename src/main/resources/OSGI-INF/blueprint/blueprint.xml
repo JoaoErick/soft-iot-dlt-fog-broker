@@ -5,37 +5,31 @@
            xsi:schemaLocation="
              http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd
              http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
-    
-    <service id="serviceController" ref="myBean" interface="br.uefs.larsid.dlt.iot.soft.services.Controller"/>
+
+    <bean id="MQTTClientHostBean" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+        init-method="start" destroy-method="stop">
+        <property name="debugModeValue" value="${debugModeValue}" />
+        <property name="ip" value="${ip}" />
+		<property name="port" value="${port}" />
+		<property name="userName" value="${user}" />
+		<property name="password" value="${pass}" />
+    </bean>
+
+    <bean id="MQTTClientUpBean" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+        init-method="start" destroy-method="stop">
+        <property name="debugModeValue" value="${debugModeValue}" />
+        <property name="ip" value="${ip_up}" />
+		<property name="port" value="${port_up}" />
+		<property name="userName" value="${user_up}" />
+		<property name="password" value="${pass_up}" />
+    </bean>
     
     <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
-        <property name="MQTTClientHost" ref="serviceMQTTHost" />
-        <property name="MQTTClientUp" ref="serviceMQTTUp" />
+        <property name="MQTTClientHost" ref="MQTTClientHostBean" />
+        <property name="MQTTClientUp" ref="MQTTClientUpBean" />
         <property name="childs" value="${childs}" />
-    </bean>
-
-    <service id="serviceMQTTHost" ref="MQTTClientHost" 
-        interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
-
-    <service id="serviceMQTTUp" ref="MQTTClientUp" 
-        interface="br.uefs.larsid.dlt.iot.soft.services.MQTTClientService"/>
-
-    <bean id="MQTTClientHost" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
-        init-method="start" destroy-method="stop">
-        <property name="ip" value="${ip}" ></property>
-		<property name="port" value="${port}" ></property>
-		<property name="userName" value="${user}" ></property>
-		<property name="password" value="${pass}" ></property>
-    </bean>
-
-    <bean id="MQTTClientUp" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
-        init-method="start" destroy-method="stop">
-        <property name="ip" value="${ip_up}" ></property>
-		<property name="port" value="${port_up}" ></property>
-		<property name="userName" value="${user_up}" ></property>
-		<property name="password" value="${pass_up}" ></property>
     </bean>
 
     <cm:property-placeholder
@@ -50,10 +44,9 @@
 			<cm:property name="port_up" value="1885" />
 			<cm:property name="user_up" value="karaf" />
 			<cm:property name="pass_up" value="karaf" />
-			<cm:property name="debugModeValue" value="true" ></cm:property>
-			<cm:property name="childs" value="1"></cm:property>
+			<cm:property name="debugModeValue" value="true" />
+			<cm:property name="childs" value="1" />
 		</cm:default-properties>
 	</cm:property-placeholder>
-
 
 </blueprint>
