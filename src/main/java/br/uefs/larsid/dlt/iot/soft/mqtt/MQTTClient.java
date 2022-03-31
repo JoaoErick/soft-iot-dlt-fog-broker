@@ -14,6 +14,9 @@ import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
+  private static final int QOS = 1;
+  private static final String CONNECTED = "CONNECTED/1/1";
+
   private String ip;
   private String port;
   private String userName;
@@ -63,8 +66,6 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
       this.mqttClient.setCallback(this);
       this.mqttClient.connect(mqttOptions);
-
-      printlnDebug("Connected to the MQTT broker!");
     } catch (MqttException ex) {
       printlnDebug(
         "Error connecting to MQTT broker " + this.serverURI + " - " + ex
@@ -222,11 +223,21 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
   @Override
   public void connectComplete(boolean reconnect, String serverURI) {
-    this.printlnDebug(reconnect ? "Reconnected!" : "Connected");
+    byte[] payload = "bytes".getBytes();
+    this.publish(CONNECTED, payload, QOS);
+
+    this.printlnDebug(
+        String.format(
+          "%s to the MQTT broker!",
+          reconnect ? "Reconnected!" : "Connected"
+        )
+      );
   }
 
   private void printlnDebug(String str) {
-    if (isDebugModeValue()) System.out.println(str);
+    if (debugModeValue) {
+      System.out.println(str);
+    }
   }
 
   public boolean isDebugModeValue() {

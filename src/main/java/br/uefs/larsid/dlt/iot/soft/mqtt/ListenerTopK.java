@@ -2,8 +2,8 @@ package br.uefs.larsid.dlt.iot.soft.mqtt;
 
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -53,9 +53,9 @@ public class ListenerTopK implements IMqttMessageListener {
 
       MQTTClientHost.publish(topic, messageEmpty, 1);
 
-      List<String> scoreListEmpty = new ArrayList<String>();
+      Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
 
-      impl.getTopKScores().put(params[1], scoreListEmpty);
+      impl.getTopKScores().put(params[1], scoreMapEmpty);
 
       // Inicia o cálculo de top k
       impl.calculateTopK(params[1], k);

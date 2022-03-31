@@ -4,8 +4,8 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ControllerImpl implements Controller {
@@ -18,7 +18,7 @@ public class ControllerImpl implements Controller {
   private MQTTClient MQTTClientHost;
   private MQTTClient MQTTClientUp;
   private String childs;
-  public Map<String, List<String>> topKScores = new HashMap<String, List<String>>();
+  public Map<String, Map<String, Integer>> topKScores = new HashMap<String, Map<String, Integer>>();
 
   public ControllerImpl() {}
 
@@ -43,34 +43,36 @@ public class ControllerImpl implements Controller {
       k +
       " | " +
       "amount of nodes: " +
-      this.getScoresById(id).size()
+      this.getMapById(id).size()
     );
 
-    while (this.getScoresById(id).size() < Integer.parseInt(this.childs)) {}
+    while ((this.getMapById(id).size() / k) < Integer.parseInt(this.childs)) {}
 
     printlnDebug("OK... now let's calculate the TOP-K dos TOP-K's!");
-    printlnDebug("TOP_K SCORES RECEIVED: " + this.getScoresById(id).size());
+    printlnDebug("TOP_K Scores Received: " + this.getMapById(id).size());
 
-    Map<String, Integer> devicesAndScoresMap = new HashMap<String, Integer>();
+    Map<String, Integer> devicesAndScoresMap = this.getMapById(id);
 
-    for (String result : this.getScoresById(id)) {
-      result = result.replace("{", "");
-      result = result.replace("}", "");
-      result = result.replace(" ", "");
+    // for (String result : this.getMapById(id)) {
+    //   result = result.replace("{", "");
+    //   result = result.replace("}", "");
+    //   result = result.replace(" ", "");
 
-      String[] pairs = result.split(",");
+    //   String[] pairs = result.split(",");
 
-      for (int i = 0; i < pairs.length; i++) {
-        String pair = pairs[i];
-        String[] keyValue = pair.split("=");
-        devicesAndScoresMap.put(keyValue[0], Integer.valueOf(keyValue[1]));
-      }
-    }
+    //   for (int i = 0; i < pairs.length; i++) {
+    //     String pair = pairs[i];
+    //     String[] keyValue = pair.split("=");
+    //     devicesAndScoresMap.put(keyValue[0], Integer.valueOf(keyValue[1]));
+    //   }
+    // }
 
     devicesAndScoresMap
       .entrySet()
       .stream()
-      .sorted(Map.Entry.<String, Integer>comparingByValue());
+      .sorted(
+        Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
+      );
 
     /* Object[] a = devicesAndScoresMap.entrySet().toArray(); */
 
@@ -86,41 +88,41 @@ public class ControllerImpl implements Controller {
     ); */
 
     Object[] devicesAndScoresSet = devicesAndScoresMap.entrySet().toArray();
-    Map<String, Integer> top_k = new HashMap<String, Integer>();
+    Map<String, Integer> topK = new HashMap<String, Integer>();
 
     // Pegando os k piores ...
     /* for (int i = 0; i < k; i++) {
       Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) a[i];
       top_k.put(e.getKey(), e.getValue());
     } */
+
     for (int i = 0; i < k; i++) {
-      Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) devicesAndScoresSet[i];
-      top_k.put(e.getKey(), e.getValue());
+      Map.Entry<String, Integer> temp = (Map.Entry<String, Integer>) devicesAndScoresSet[i];
+      topK.put(temp.getKey(), temp.getValue());
     }
 
-    printlnDebug("TOP_K RESULT => " + top_k.toString());
+    printlnDebug("Top-K Result => " + topK.toString());
 
     printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
 
-    byte[] b = top_k.toString().getBytes();
-    MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, b, 1);
+    byte[] payload = topK.toString().getBytes();
+
+    MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
   }
 
   @Override
-  public Map<String, List<String>> getTopKScores() {
+  public Map<String, Map<String, Integer>> getTopKScores() {
     return this.topKScores;
   }
 
   @Override
-  public List<String> getScoresById(String id) {
+  public Map<String, Integer> getMapById(String id) {
     return this.topKScores.get(id);
   }
 
   @Override
-  public boolean putScores(String id, List<String> score) {
-    List<String> list = this.topKScores.put(id, score);
-
-    return list.isEmpty();
+  public boolean putScores(String id, Map<String, Integer> fogMap) {
+    return this.topKScores.put(id, fogMap).isEmpty();
   }
 
   public String getChilds() {
@@ -132,40 +134,36 @@ public class ControllerImpl implements Controller {
   }
 
   public boolean isDebugModeValue() {
-    return debugModeValue;
+    return this.debugModeValue;
   }
 
   public void setDebugModeValue(boolean debugModeValue) {
     this.debugModeValue = debugModeValue;
   }
 
-  public Map<String, List<String>> getTopk_k_scoresByIdrequi() {
-    return topKScores;
-  }
-
-  public void setTopk_k_scoresByIdrequi(Map<String, List<String>> topKScores) {
-    this.topKScores = topKScores;
-  }
-
-  public MQTTClient getMQTTClientHost() {
-    return MQTTClientHost;
-  }
-
-  public void setMQTTClientHost(MQTTClient mQTTClientHost) {
-    MQTTClientHost = mQTTClientHost;
-  }
-
   public MQTTClient getMQTTClientUp() {
-    return MQTTClientUp;
+    return this.MQTTClientUp;
   }
 
-  public void setMQTTClientUp(MQTTClient mQTTClientUp) {
-    MQTTClientUp = mQTTClientUp;
+  public void setMQTTClientUp(MQTTClient MQTTClientUp) {
+    this.MQTTClientUp = MQTTClientUp;
   }
 
   private void printlnDebug(String str) {
     if (debugModeValue) {
       System.out.println(str);
     }
+  }
+
+  public void setTopKScores(Map<String, Map<String, Integer>> topKScores) {
+    this.topKScores = topKScores;
+  }
+
+  public MQTTClient getMQTTClientHost() {
+    return this.MQTTClientHost;
+  }
+
+  public void setMQTTClientHost(MQTTClient mQTTClientHost) {
+    this.MQTTClientHost = mQTTClientHost;
   }
 }

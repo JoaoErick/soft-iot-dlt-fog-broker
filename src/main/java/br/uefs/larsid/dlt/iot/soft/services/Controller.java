@@ -1,14 +1,13 @@
 package br.uefs.larsid.dlt.iot.soft.services;
 
-import java.util.List;
 import java.util.Map;
 
 public interface Controller {
   void calculateTopK(String id, int k);
 
-  List<String> getScoresById(String id);
+  Map<String, Integer> getMapById(String id);
 
-  boolean putScores(String id, List<String> score);
+  boolean putScores(String id, Map<String, Integer> fogMap);
 
-  Map<String, List<String>> getTopKScores();
+  Map<String, Map<String, Integer>> getTopKScores();
 }
