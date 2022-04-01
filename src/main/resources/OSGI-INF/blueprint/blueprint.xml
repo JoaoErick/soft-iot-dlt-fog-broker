@@ -6,7 +6,7 @@
              http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd
              http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 
-    <bean id="MQTTClientHostBean" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <bean id="MQTTClientHost" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip}" />
@@ -15,20 +15,20 @@
         <property name="password" value="${pass}" />
     </bean>
 
-    <bean id="MQTTClientUpBean" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <bean id="MQTTClientUp" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
-        <property name="ip" value="${ip_up}" />
-        <property name="port" value="${port_up}" />
-        <property name="userName" value="${user_up}" />
-        <property name="password" value="${pass_up}" />
+        <property name="ip" value="${ip}" />
+        <property name="port" value="${port}" />
+        <property name="userName" value="${user}" />
+        <property name="password" value="${pass}" />
     </bean>
-    
+
     <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
-        <property name="MQTTClientHost" ref="MQTTClientHostBean" />
-        <property name="MQTTClientUp" ref="MQTTClientUpBean" />
+        <property name="MQTTClientHost" ref="MQTTClientHost" />
+        <property name="MQTTClientUp" ref="MQTTClientUp" />
         <property name="childs" value="${childs}" />
     </bean>
 
@@ -37,13 +37,9 @@
 		update-strategy="reload">
 		<cm:default-properties>
 			<cm:property name="ip" value="localhost" />
-			<cm:property name="port" value="1884" />
+			<cm:property name="port" value="1883" />
 			<cm:property name="user" value="karaf" />
 			<cm:property name="pass" value="karaf" />
-			<cm:property name="ip_up" value="localhost" />
-			<cm:property name="port_up" value="1885" />
-			<cm:property name="user_up" value="karaf" />
-			<cm:property name="pass_up" value="karaf" />
 			<cm:property name="debugModeValue" value="true" />
 			<cm:property name="childs" value="1" />
 		</cm:default-properties>
