@@ -10,4 +10,6 @@ public interface Controller {
   boolean putScores(String id, Map<String, Integer> fogMap);
 
   Map<String, Map<String, Integer>> getTopKScores();
+
+  Map<String, Integer> convertStrigToMap(String mapAsString);
 }

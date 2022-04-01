@@ -4,15 +4,20 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ControllerImpl implements Controller {
 
+  /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
+  private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
-  private static final String TOP_K = "TOP_K_HEALTH/#";
+  /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
   private MQTTClient MQTTClientHost;
@@ -22,20 +27,36 @@ public class ControllerImpl implements Controller {
 
   public ControllerImpl() {}
 
+  /**
+   * 
+   */
   public void start() {
     this.MQTTClientHost.connect();
     this.MQTTClientUp.connect();
 
-    new Listener(this, MQTTClientHost, TOP_K_RES, QOS);
-    new ListenerTopK(this, MQTTClientUp, MQTTClientHost, TOP_K, QOS);
+    new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+    new ListenerTopK(
+      this,
+      MQTTClientUp,
+      MQTTClientHost,
+      TOP_K,
+      QOS,
+      debugModeValue
+    );
   }
 
+  /**
+   * 
+   */
   public void stop() {
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
     // Desinscrever dos tópicos.
   }
 
+  /**
+   * 
+   */
   @Override
   public void calculateTopK(String id, int k) {
     printlnDebug(
@@ -53,20 +74,6 @@ public class ControllerImpl implements Controller {
 
     Map<String, Integer> devicesAndScoresMap = this.getMapById(id);
 
-    // for (String result : this.getMapById(id)) {
-    //   result = result.replace("{", "");
-    //   result = result.replace("}", "");
-    //   result = result.replace(" ", "");
-
-    //   String[] pairs = result.split(",");
-
-    //   for (int i = 0; i < pairs.length; i++) {
-    //     String pair = pairs[i];
-    //     String[] keyValue = pair.split("=");
-    //     devicesAndScoresMap.put(keyValue[0], Integer.valueOf(keyValue[1]));
-    //   }
-    // }
-
     devicesAndScoresMap
       .entrySet()
       .stream()
@@ -74,27 +81,8 @@ public class ControllerImpl implements Controller {
         Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
       );
 
-    /* Object[] a = devicesAndScoresMap.entrySet().toArray(); */
-
-    /* Arrays.sort(
-      a,
-      new Comparator<Object>() {
-        @SuppressWarnings("unchecked")
-        public int compare(Object o1, Object o2) {
-          return ((Map.Entry<String, Integer>) o2).getValue()
-            .compareTo(((Map.Entry<String, Integer>) o1).getValue());
-        }
-      }
-    ); */
-
     Object[] devicesAndScoresSet = devicesAndScoresMap.entrySet().toArray();
     Map<String, Integer> topK = new HashMap<String, Integer>();
-
-    // Pegando os k piores ...
-    /* for (int i = 0; i < k; i++) {
-      Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) a[i];
-      top_k.put(e.getKey(), e.getValue());
-    } */
 
     for (int i = 0; i < k; i++) {
       Map.Entry<String, Integer> temp = (Map.Entry<String, Integer>) devicesAndScoresSet[i];
@@ -107,22 +95,54 @@ public class ControllerImpl implements Controller {
 
     byte[] payload = topK.toString().getBytes();
 
-    MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
+    MQTTClientUp.publish("TOP_K_HEALTH_RES_FOG/" + id, payload, 1);
+
+    this.removeRequest(id);
   }
 
+  /**
+   * 
+   */
   @Override
   public Map<String, Map<String, Integer>> getTopKScores() {
     return this.topKScores;
   }
 
+  /**
+   * 
+   */
   @Override
   public Map<String, Integer> getMapById(String id) {
     return this.topKScores.get(id);
   }
 
+  /**
+   * 
+   */
   @Override
   public boolean putScores(String id, Map<String, Integer> fogMap) {
     return this.topKScores.put(id, fogMap).isEmpty();
+  }
+
+  /**
+   * 
+   */
+  @Override
+  public Map<String, Integer> convertStrigToMap(String mapAsString) {
+    return Arrays
+      .stream(mapAsString.substring(1, mapAsString.length() - 1).split(","))
+      .map(entry -> entry.split("="))
+      .collect(
+        Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1]))
+      );
+  }
+
+  /**
+   * 
+   * @param id
+   */
+  private void removeRequest(String id) {
+    this.topKScores.remove(id);
   }
 
   public String getChilds() {
