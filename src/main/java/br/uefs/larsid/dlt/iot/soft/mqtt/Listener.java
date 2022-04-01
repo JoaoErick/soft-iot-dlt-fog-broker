@@ -25,7 +25,7 @@ public class Listener implements IMqttMessageListener {
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public Listener(
-      Controller controllerImpl,
+    Controller controllerImpl,
     MQTTClient MQTTClientHost,
     String topic,
     int qos,
