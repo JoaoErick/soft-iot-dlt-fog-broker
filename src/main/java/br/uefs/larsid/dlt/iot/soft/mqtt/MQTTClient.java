@@ -26,8 +26,14 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   private MqttConnectOptions mqttOptions;
   private boolean debugModeValue;
 
+  /**
+   * 
+   */
   public MQTTClient() {}
 
+  /**
+   * 
+   */
   public void start() {
     printlnDebug("Starting SOFT-IoT-Fog-Broker bundle...");
     this.serverURI = String.format("tcp://%s:%s", this.ip, this.port);
@@ -43,6 +49,9 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
     this.mqttOptions.setPassword(this.password.toCharArray());
   }
 
+  /**
+   * 
+   */
   public void stop() {
     printlnDebug("Finishing SOFT-IoT-Fog-Broker bundle...");
   }
