@@ -10,18 +10,18 @@
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip}" />
-		<property name="port" value="${port}" />
-		<property name="userName" value="${user}" />
-		<property name="password" value="${pass}" />
+        <property name="port" value="${port}" />
+        <property name="userName" value="${user}" />
+        <property name="password" value="${pass}" />
     </bean>
 
     <bean id="MQTTClientUpBean" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip_up}" />
-		<property name="port" value="${port_up}" />
-		<property name="userName" value="${user_up}" />
-		<property name="password" value="${pass_up}" />
+        <property name="port" value="${port_up}" />
+        <property name="userName" value="${user_up}" />
+        <property name="password" value="${pass_up}" />
     </bean>
     
     <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
@@ -32,7 +32,7 @@
         <property name="childs" value="${childs}" />
     </bean>
 
-    <cm:property-placeholder
+  <cm:property-placeholder
 		persistent-id="br.ufba.dcc.wiser.soft_iot.fog_broker"
 		update-strategy="reload">
 		<cm:default-properties>
