@@ -16,8 +16,8 @@ Atualmente o `soft-iot-dlt-fog-broker` trabalha junto com o [`SOFT-IoT-Bottom-Br
 
 Propriedade | Descrição | Valor Padrão
 ------------|-----------|-------------
-IP | Endereço IP para conexão com o *Broker* | localhost
-Port | Porta para conexão com o *Broker* | 1883
+ip | Endereço IP para conexão com o *Broker* | localhost
+port | Porta para conexão com o *Broker* | 1883
 user | Usuário para conexão com o *Broker* | karaf
 pass | Senha para conexão com o *Broker* | karaf
 debugModeValue | Modo depuração | true
