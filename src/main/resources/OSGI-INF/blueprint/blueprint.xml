@@ -33,7 +33,7 @@
     </bean>
 
   <cm:property-placeholder
-		persistent-id="br.ufba.dcc.wiser.soft_iot.fog_broker"
+		persistent-id="br.uefs.larsid.dlt.soft_iot.fog_broker"
 		update-strategy="reload">
 		<cm:default-properties>
 			<cm:property name="ip" value="localhost" />
