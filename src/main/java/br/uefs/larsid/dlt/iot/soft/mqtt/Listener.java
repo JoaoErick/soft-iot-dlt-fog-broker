@@ -46,11 +46,10 @@ public class Listener implements IMqttMessageListener {
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
     final String[] params = topic.split("/");
+    String messageContent = new String(message.getPayload());
 
     if (params[0].equals(TOP_K_RES)) {
       printlnDebug("==== Bottom gateway -> Fog gateway  ====");
-
-      String messageContent = new String(message.getPayload());
 
       Map<String, Integer> bottomMap = controllerImpl.convertStrigToMap(
         messageContent
@@ -64,12 +63,8 @@ public class Listener implements IMqttMessageListener {
         "Top-K response received: " +
         controllerImpl.getMapById(params[1]).toString()
       );
-    }
-
-    if (params[0].equals(INVALID_TOP_K)) {
+    } else if (params[0].equals(INVALID_TOP_K)) {
       printlnDebug("Invalid Top-K!");
-
-      String messageContent = new String(message.getPayload()); // Colocar fora do IF
 
       this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
     }
