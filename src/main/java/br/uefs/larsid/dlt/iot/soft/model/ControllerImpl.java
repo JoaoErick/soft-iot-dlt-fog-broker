@@ -85,26 +85,10 @@ public class ControllerImpl implements Controller {
         Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
       );
 
-    Object[] devicesAndScoresSet = devicesAndScoresMap.entrySet().toArray();
-    Map<String, Integer> topK = new HashMap<String, Integer>();
-
-    /* Caso a quantidade de dispositivos não seja o suficiente para a quantidade
-    requisitada. */
-    int maxIteration = k <= devicesAndScoresMap.size()
-      ? k
-      : devicesAndScoresMap.size();
-
-    for (int i = 0; i < maxIteration; i++) {
-      // TODO Usar o próprio Map devicesAndScoresMap
-      Map.Entry<String, Integer> temp = (Map.Entry<String, Integer>) devicesAndScoresSet[i];
-      topK.put(temp.getKey(), temp.getValue());
-    }
-
-    printlnDebug("Top-K Result => " + topK.toString());
-
+    printlnDebug("Top-K Result => " + devicesAndScoresMap.toString());
     printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
 
-    byte[] payload = topK.toString().getBytes();
+    byte[] payload = devicesAndScoresMap.toString().getBytes();
 
     MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
 
