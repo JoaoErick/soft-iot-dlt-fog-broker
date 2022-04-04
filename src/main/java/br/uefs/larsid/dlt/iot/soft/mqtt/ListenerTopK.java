@@ -44,14 +44,14 @@ public class ListenerTopK implements IMqttMessageListener {
   }
 
   /**
-   * 
+   *
    */
   @Override
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
     final String[] params = topic.split("/");
 
-    final int k = Integer.valueOf(params[2]);
+    final int k = Integer.valueOf(params[2]); //TODO: Tratar aqui requisição k = 0
 
     printlnDebug("==== Fog UP gateway -> Fog gateway  ====");
 
@@ -60,12 +60,7 @@ public class ListenerTopK implements IMqttMessageListener {
     if (params[0].equals(TOP_K_FOG)) {
       byte[] messageEmpty = "".getBytes();
 
-      String topicDown = String.format(
-        "%s/%s/%s",
-        TOP_K,
-        params[1],
-        params[2]
-      );
+      String topicDown = String.format("%s/%s/%s", TOP_K, params[1], params[2]);
 
       MQTTClientHost.publish(topicDown, messageEmpty, QOS);
 
@@ -79,7 +74,7 @@ public class ListenerTopK implements IMqttMessageListener {
   }
 
   /**
-   * 
+   *
    * @param str
    */
   private void printlnDebug(String str) {
