@@ -13,5 +13,7 @@ public interface Controller {
 
   Map<String, Integer> convertStrigToMap(String mapAsString);
 
+  void sendEmptyTopK(String topicId);
+
   void sendInvalidTopKMessage(String topicId, String message);
 }
