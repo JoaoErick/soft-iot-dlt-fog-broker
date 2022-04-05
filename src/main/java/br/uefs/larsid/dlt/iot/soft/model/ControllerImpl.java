@@ -4,7 +4,6 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,6 +16,9 @@ public class ControllerImpl implements Controller {
   private static final int QOS = 1;
   private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
+  private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
+  private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
+  private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -28,12 +30,13 @@ public class ControllerImpl implements Controller {
   public ControllerImpl() {}
 
   /**
-   * 
+   * Inicialização do Bundle.
    */
   public void start() {
     this.MQTTClientHost.connect();
     this.MQTTClientUp.connect();
 
+    new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
     new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
     new ListenerTopK(
       this,
@@ -46,16 +49,16 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * 
+   * Finalização do Bundle.
    */
   public void stop() {
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
-    // Desinscrever dos tópicos.
+    // TODO Desinscrever dos tópicos.
   }
 
   /**
-   * 
+   * Calcula o Top-K dos Top-Ks recebidos.
    */
   @Override
   public void calculateTopK(String id, int k) {
@@ -67,9 +70,10 @@ public class ControllerImpl implements Controller {
       this.getMapById(id).size()
     );
 
-    while ((this.getMapById(id).size() / k) < Integer.parseInt(this.childs)) {}
+    // while ((this.getMapById(id).size() / k) < Integer.parseInt(this.childs)) {}
+    while (this.getMapById(id).size() <= 0) {}
 
-    printlnDebug("OK... now let's calculate the TOP-K dos TOP-K's!");
+    printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
     printlnDebug("TOP_K Scores Received: " + this.getMapById(id).size());
 
     Map<String, Integer> devicesAndScoresMap = this.getMapById(id);
@@ -81,27 +85,18 @@ public class ControllerImpl implements Controller {
         Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
       );
 
-    Object[] devicesAndScoresSet = devicesAndScoresMap.entrySet().toArray();
-    Map<String, Integer> topK = new HashMap<String, Integer>();
-
-    for (int i = 0; i < k; i++) {
-      Map.Entry<String, Integer> temp = (Map.Entry<String, Integer>) devicesAndScoresSet[i];
-      topK.put(temp.getKey(), temp.getValue());
-    }
-
-    printlnDebug("Top-K Result => " + topK.toString());
-
+    printlnDebug("Top-K Result => " + devicesAndScoresMap.toString());
     printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
 
-    byte[] payload = topK.toString().getBytes();
+    byte[] payload = devicesAndScoresMap.toString().getBytes();
 
-    MQTTClientUp.publish("TOP_K_HEALTH_RES_FOG/" + id, payload, 1);
+    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
 
     this.removeRequest(id);
   }
 
   /**
-   * 
+   *
    */
   @Override
   public Map<String, Map<String, Integer>> getTopKScores() {
@@ -109,7 +104,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * 
+   *
    */
   @Override
   public Map<String, Integer> getMapById(String id) {
@@ -117,7 +112,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * 
+   *
    */
   @Override
   public boolean putScores(String id, Map<String, Integer> fogMap) {
@@ -125,7 +120,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * 
+   *
    */
   @Override
   public Map<String, Integer> convertStrigToMap(String mapAsString) {
@@ -137,8 +132,15 @@ public class ControllerImpl implements Controller {
       );
   }
 
+  @Override
+  public void sendInvalidTopKMessage(String topicId, String message) {
+    printlnDebug(message);
+
+    MQTTClientUp.publish(INVALID_TOP_K_FOG + topicId, message.getBytes(), QOS);
+  }
+
   /**
-   * 
+   *
    * @param id
    */
   private void removeRequest(String id) {
@@ -185,5 +187,14 @@ public class ControllerImpl implements Controller {
 
   public void setMQTTClientHost(MQTTClient mQTTClientHost) {
     this.MQTTClientHost = mQTTClientHost;
+  }
+
+  @Override
+  public void sendEmptyTopK(String topicId) {
+    byte[] payload = new HashMap<String, Map<String, Integer>>()
+      .toString()
+      .getBytes();
+
+    this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
 }

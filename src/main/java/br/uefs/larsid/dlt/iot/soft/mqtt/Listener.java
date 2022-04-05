@@ -9,6 +9,7 @@ public class Listener implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES";
+  private static final String INVALID_TOP_K = "INVALID_TOP_K";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -33,26 +34,28 @@ public class Listener implements IMqttMessageListener {
   ) {
     this.controllerImpl = controllerImpl;
     this.MQTTClientHost = MQTTClientHost;
-    this.debugModeValue = debugModeValue; 
+    this.debugModeValue = debugModeValue;
 
     this.MQTTClientHost.subscribe(qos, this, topic);
   }
 
   /**
-   * 
+   *
    */
   @Override
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
     final String[] params = topic.split("/");
+    String messageContent = new String(message.getPayload());
 
     if (params[0].equals(TOP_K_RES)) {
       printlnDebug("==== Bottom gateway -> Fog gateway  ====");
 
-      String messageContent = new String(message.getPayload());
-      Map<String, Integer> bottomMap = controllerImpl.convertStrigToMap(messageContent);
+      Map<String, Integer> bottomMap = controllerImpl.convertStrigToMap(
+        messageContent
+      );
       Map<String, Integer> fogMap = this.controllerImpl.getMapById(params[1]);
-      
+
       fogMap.putAll(bottomMap);
       controllerImpl.putScores(params[1], fogMap);
 
@@ -60,11 +63,15 @@ public class Listener implements IMqttMessageListener {
         "Top-K response received: " +
         controllerImpl.getMapById(params[1]).toString()
       );
+    } else if (params[0].equals(INVALID_TOP_K)) {
+      printlnDebug("Invalid Top-K!");
+
+      this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
     }
   }
 
   /**
-   * 
+   *
    * @param str
    */
   private void printlnDebug(String str) {

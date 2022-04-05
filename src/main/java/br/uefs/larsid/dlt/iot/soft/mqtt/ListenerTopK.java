@@ -44,7 +44,7 @@ public class ListenerTopK implements IMqttMessageListener {
   }
 
   /**
-   * 
+   *
    */
   @Override
   public void messageArrived(String topic, MqttMessage message)
@@ -57,29 +57,36 @@ public class ListenerTopK implements IMqttMessageListener {
 
     printlnDebug("Request received: " + topic);
 
-    if (params[0].equals(TOP_K_FOG)) {
-      byte[] messageEmpty = "".getBytes();
+    if (k == 0) {
+      printlnDebug("Top-K = 0");
 
-      String topicDown = String.format(
-        "%s/%s/%s",
-        TOP_K,
-        params[1],
-        params[2]
-      );
+      this.controllerImpl.sendEmptyTopK(params[1]);
+    } else {
 
-      MQTTClientHost.publish(topicDown, messageEmpty, QOS);
+      if (params[0].equals(TOP_K_FOG)) {
+        byte[] messageEmpty = "".getBytes();
 
-      Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
+        String topicDown = String.format(
+          "%s/%s/%s",
+          TOP_K,
+          params[1],
+          params[2]
+        );
 
-      controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+        MQTTClientHost.publish(topicDown, messageEmpty, QOS);
 
-      // Inicia o cálculo de Top-K
-      controllerImpl.calculateTopK(params[1], k);
+        Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
+
+        controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+
+        // Inicia o cálculo de Top-K
+        controllerImpl.calculateTopK(params[1], k);
+      }
     }
   }
 
   /**
-   * 
+   *
    * @param str
    */
   private void printlnDebug(String str) {

@@ -12,4 +12,8 @@ public interface Controller {
   Map<String, Map<String, Integer>> getTopKScores();
 
   Map<String, Integer> convertStrigToMap(String mapAsString);
+
+  void sendEmptyTopK(String topicId);
+
+  void sendInvalidTopKMessage(String topicId, String message);
 }
