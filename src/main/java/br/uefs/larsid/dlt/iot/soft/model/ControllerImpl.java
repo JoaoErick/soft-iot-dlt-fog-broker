@@ -61,18 +61,8 @@ public class ControllerImpl implements Controller {
    * Calcula o Top-K dos Top-Ks recebidos.
    */
   @Override
-  public void calculateTopK(String id, int k) {
-    printlnDebug(
-      "Waiting for Gateway nodes to send their top-" +
-      k +
-      " | " +
-      "amount of nodes: " +
-      this.getMapById(id).size()
-    );
-
-    // while ((this.getMapById(id).size() / k) < Integer.parseInt(this.childs)) {}
-    while (this.getMapById(id).size() <= 0) {}
-
+  public void calculateTopK(String id) {
+    printlnDebug("Waiting for Gateway nodes to send their Top-K");
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
     printlnDebug("TOP_K Scores Received: " + this.getMapById(id).size());
 
@@ -125,7 +115,7 @@ public class ControllerImpl implements Controller {
   @Override
   public Map<String, Integer> convertStrigToMap(String mapAsString) {
     return Arrays
-      .stream(mapAsString.substring(1, mapAsString.length() - 1).split(","))
+      .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
       .map(entry -> entry.split("="))
       .collect(
         Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1]))
@@ -137,13 +127,15 @@ public class ControllerImpl implements Controller {
     printlnDebug(message);
 
     MQTTClientUp.publish(INVALID_TOP_K_FOG + topicId, message.getBytes(), QOS);
+    
   }
 
   /**
    *
    * @param id
    */
-  private void removeRequest(String id) {
+  @Override
+  public void removeRequest(String id) {
     this.topKScores.remove(id);
   }
 

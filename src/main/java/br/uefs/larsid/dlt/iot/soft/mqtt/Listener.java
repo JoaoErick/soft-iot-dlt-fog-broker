@@ -48,25 +48,38 @@ public class Listener implements IMqttMessageListener {
     final String[] params = topic.split("/");
     String messageContent = new String(message.getPayload());
 
-    if (params[0].equals(TOP_K_RES)) {
-      printlnDebug("==== Bottom gateway -> Fog gateway  ====");
+    printlnDebug("==== Bottom gateway -> Fog gateway  ====");
 
-      Map<String, Integer> bottomMap = controllerImpl.convertStrigToMap(
-        messageContent
-      );
-      Map<String, Integer> fogMap = this.controllerImpl.getMapById(params[1]);
+    /* Verificar qual o tópico recebido. */
+    switch (params[0]) {
+      case TOP_K_RES:
+        /* Se o mapa de scores recebido for diferente de vazio. */
+        if (!messageContent.equals("{}")) {
+          Map<String, Integer> fogMap =
+            this.controllerImpl.getMapById(params[1]);
 
-      fogMap.putAll(bottomMap);
-      controllerImpl.putScores(params[1], fogMap);
+          /* Adicionando o mapa de scores recebido no mapa geral, levando em 
+          consideração o id da requisição. */
+          fogMap.putAll(controllerImpl.convertStrigToMap(messageContent));
+          controllerImpl.putScores(params[1], fogMap);
 
-      printlnDebug(
-        "Top-K response received: " +
-        controllerImpl.getMapById(params[1]).toString()
-      );
-    } else if (params[0].equals(INVALID_TOP_K)) {
-      printlnDebug("Invalid Top-K!");
+          printlnDebug(
+            "Top-K response received: " +
+            controllerImpl.getMapById(params[1]).toString()
+          );
 
-      this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
+          /* Executando o cálculo de Top-K. */
+          controllerImpl.calculateTopK(params[1]);
+        } else {
+          this.controllerImpl.sendEmptyTopK(params[1]);
+          this.controllerImpl.removeRequest(params[1]);
+        }
+        break;
+      case INVALID_TOP_K:
+        printlnDebug("Invalid Top-K!");
+
+        this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
+        break;
     }
   }
 
