@@ -127,6 +127,7 @@ public class ControllerImpl implements Controller {
     printlnDebug(message);
 
     MQTTClientUp.publish(INVALID_TOP_K_FOG + topicId, message.getBytes(), QOS);
+    
   }
 
   /**
