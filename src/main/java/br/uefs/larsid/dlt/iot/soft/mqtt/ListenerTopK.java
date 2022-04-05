@@ -62,7 +62,6 @@ public class ListenerTopK implements IMqttMessageListener {
 
       this.controllerImpl.sendEmptyTopK(params[1]);
     } else {
-
       if (params[0].equals(TOP_K_FOG)) {
         byte[] messageEmpty = "".getBytes();
 
@@ -78,9 +77,6 @@ public class ListenerTopK implements IMqttMessageListener {
         Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
 
         controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
-
-        // Inicia o cálculo de Top-K
-        // controllerImpl.calculateTopK(params[1], k);
       }
     }
   }
