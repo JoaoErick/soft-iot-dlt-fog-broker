@@ -3,7 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.services;
 import java.util.Map;
 
 public interface Controller {
-  void calculateTopK(String id, int k);
+  void calculateTopK(String id);
 
   Map<String, Integer> getMapById(String id);
 
@@ -16,4 +16,6 @@ public interface Controller {
   void sendEmptyTopK(String topicId);
 
   void sendInvalidTopKMessage(String topicId, String message);
+
+  void removeRequest(String id);
 }
