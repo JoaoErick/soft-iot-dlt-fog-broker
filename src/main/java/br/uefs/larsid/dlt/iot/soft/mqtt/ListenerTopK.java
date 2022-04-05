@@ -80,7 +80,7 @@ public class ListenerTopK implements IMqttMessageListener {
         controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
 
         // Inicia o cálculo de Top-K
-        controllerImpl.calculateTopK(params[1], k);
+        // controllerImpl.calculateTopK(params[1], k);
       }
     }
   }
