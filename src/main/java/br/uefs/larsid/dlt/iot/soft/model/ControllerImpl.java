@@ -62,6 +62,8 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public void calculateTopK(String id) {
+    // TODO Colocar k como parâmetro
+    // TODO Colocar verificação de childs
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
     printlnDebug("TOP_K Scores Received: " + this.getMapById(id).size());
