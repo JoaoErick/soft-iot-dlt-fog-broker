@@ -17,7 +17,7 @@ public class ControllerImpl implements Controller {
   private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
-  private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_RES_FOG/";
+  private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
   /*--------------------------------------------------------------------------*/
 
@@ -187,5 +187,14 @@ public class ControllerImpl implements Controller {
 
   public void setMQTTClientHost(MQTTClient mQTTClientHost) {
     this.MQTTClientHost = mQTTClientHost;
+  }
+
+  @Override
+  public void sendEmptyTopK(String topicId) {
+    byte[] payload = new HashMap<String, Map<String, Integer>>()
+      .toString()
+      .getBytes();
+
+    this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
 }
