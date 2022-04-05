@@ -48,21 +48,37 @@ public class Listener implements IMqttMessageListener {
     final String[] params = topic.split("/");
     String messageContent = new String(message.getPayload());
 
+    printlnDebug(messageContent);
+
     if (params[0].equals(TOP_K_RES)) {
       printlnDebug("==== Bottom gateway -> Fog gateway  ====");
 
-      Map<String, Integer> bottomMap = controllerImpl.convertStrigToMap(
-        messageContent
-      );
-      Map<String, Integer> fogMap = this.controllerImpl.getMapById(params[1]);
+      printlnDebug("ANTES DO IF");
+      if (!messageContent.equals("{}")) {
+        Map<String, Integer> bottomMap = controllerImpl.convertStrigToMap(
+          messageContent
+        );
 
-      fogMap.putAll(bottomMap);
-      controllerImpl.putScores(params[1], fogMap);
+        printlnDebug("DEPOIS DO IF");
 
-      printlnDebug(
-        "Top-K response received: " +
-        controllerImpl.getMapById(params[1]).toString()
-      );
+        Map<String, Integer> fogMap = this.controllerImpl.getMapById(params[1]);
+
+        fogMap.putAll(bottomMap);
+        controllerImpl.putScores(params[1], fogMap);
+
+        printlnDebug(
+          "Top-K response received: " +
+          controllerImpl.getMapById(params[1]).toString()
+        );
+
+        // Inicia o cálculo de Top-K
+        controllerImpl.calculateTopK(params[1]);
+      } else {
+        printlnDebug("DENTRO DO ELSE");
+        
+        this.controllerImpl.sendEmptyTopK(params[1]);
+        this.controllerImpl.removeRequest(params[1]);
+      }
     } else if (params[0].equals(INVALID_TOP_K)) {
       printlnDebug("Invalid Top-K!");
 
