@@ -8,35 +8,35 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class Listener implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
-  private static final String TOP_K_RES = "TOP_K_HEALTH_RES";
+  private static final String TOP_K_BOTTOM_RES = "TOP_K_HEALTH_RES";
   private static final String INVALID_TOP_K = "INVALID_TOP_K";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
   private Controller controllerImpl;
-  private MQTTClient MQTTClientHost;
+  private MQTTClient mqttClientEdge;
 
   /**
    * Método Construtor
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
-   * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
+   * @param mqttClientEdge MQTTClient - Cliente MQTT do gateway inferior.
    * @param topic String - Tópico que será ouvido
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public Listener(
     Controller controllerImpl,
-    MQTTClient MQTTClientHost,
+    MQTTClient mqttClientEdge,
     String topic,
     int qos,
     boolean debugModeValue
   ) {
     this.controllerImpl = controllerImpl;
-    this.MQTTClientHost = MQTTClientHost;
+    this.mqttClientEdge = mqttClientEdge;
     this.debugModeValue = debugModeValue;
 
-    this.MQTTClientHost.subscribe(qos, this, topic);
+    this.mqttClientEdge.subscribe(qos, this, topic);
   }
 
   /**
@@ -52,7 +52,7 @@ public class Listener implements IMqttMessageListener {
 
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
-      case TOP_K_RES:
+      case TOP_K_BOTTOM_RES:
         /* Se o mapa de scores recebido for diferente de vazio. */
         if (!messageContent.equals("{}")) {
           Map<String, Integer> fogMap =

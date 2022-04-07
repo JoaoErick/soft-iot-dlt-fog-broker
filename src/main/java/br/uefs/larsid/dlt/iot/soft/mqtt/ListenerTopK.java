@@ -10,37 +10,37 @@ public class ListenerTopK implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG";
-  private static final String TOP_K = "TOP_K_HEALTH";
+  private static final String TOP_K_BOTTOM = "TOP_K_HEALTH";
   private static final int QOS = 1;
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
-  private MQTTClient MQTTClientUp;
-  private MQTTClient MQTTClientHost;
+  private MQTTClient mqttClientFog;
+  private MQTTClient mqttClientEdge;
   private Controller controllerImpl;
 
   /**
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
-   * @param MQTTClientUp MQTTClient - Cliente MQTT do gateway superior.
-   * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
+   * @param mqttClientFog MQTTClient - Cliente MQTT do gateway superior.
+   * @param mqttClientEdge MQTTClient - Cliente MQTT do gateway inferior.
    * @param topic String - Tópico que será ouvido
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public ListenerTopK(
     Controller controllerImpl,
-    MQTTClient MQTTClientUp,
-    MQTTClient MQTTClientHost,
+    MQTTClient mqttClientFog,
+    MQTTClient mqttClientEdge,
     String topic,
     int qos,
     boolean debugModeValue
   ) {
-    this.MQTTClientUp = MQTTClientUp;
-    this.MQTTClientHost = MQTTClientHost;
+    this.mqttClientFog = mqttClientFog;
+    this.mqttClientEdge = mqttClientEdge;
     this.controllerImpl = controllerImpl;
     this.debugModeValue = debugModeValue;
-    this.MQTTClientUp.subscribe(qos, this, topic);
+    this.mqttClientFog.subscribe(qos, this, topic);
   }
 
   /**
@@ -67,12 +67,12 @@ public class ListenerTopK implements IMqttMessageListener {
 
         String topicDown = String.format(
           "%s/%s/%s",
-          TOP_K,
+          TOP_K_BOTTOM,
           params[1],
           params[2]
         );
 
-        MQTTClientHost.publish(topicDown, messageEmpty, QOS);
+        mqttClientEdge.publish(topicDown, messageEmpty, QOS);
 
         Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
 

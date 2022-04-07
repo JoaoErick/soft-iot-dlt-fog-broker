@@ -14,16 +14,18 @@ public class ControllerImpl implements Controller {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
-  private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
-  private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
-  private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
-  private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
+  private static final String TOP_K_CLOUD = "TOP_K_HEALTH_CLOUD/#";
+  private static final String TOP_K_CLOUD_RES = "TOP_K_HEALTH_CLOUD_RES/";
+  private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
+  private static final String TOP_K_FOG_RES = "TOP_K_HEALTH_FOG_RES/";
+  private static final String TOP_K_BOTTOM_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
+  private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
-  private MQTTClient MQTTClientHost;
-  private MQTTClient MQTTClientUp;
+  private MQTTClient mqttClientEdge;
+  private MQTTClient mqttClientFog;
   private String childs;
   public Map<String, Map<String, Integer>> topKScores = new HashMap<String, Map<String, Integer>>();
 
@@ -33,16 +35,16 @@ public class ControllerImpl implements Controller {
    * Inicialização do Bundle.
    */
   public void start() {
-    this.MQTTClientHost.connect();
-    this.MQTTClientUp.connect();
+    this.mqttClientEdge.connect();
+    this.mqttClientFog.connect();
 
-    new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
-    new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+    new Listener(this, mqttClientEdge, INVALID_TOP_K, QOS, debugModeValue);
+    new Listener(this, mqttClientEdge, TOP_K_BOTTOM_RES, QOS, debugModeValue);
     new ListenerTopK(
       this,
-      MQTTClientUp,
-      MQTTClientHost,
-      TOP_K,
+      mqttClientFog,
+      mqttClientEdge,
+      TOP_K_FOG,
       QOS,
       debugModeValue
     );
@@ -52,8 +54,8 @@ public class ControllerImpl implements Controller {
    * Finalização do Bundle.
    */
   public void stop() {
-    this.MQTTClientHost.disconnect();
-    this.MQTTClientUp.disconnect();
+    this.mqttClientEdge.disconnect();
+    this.mqttClientFog.disconnect();
     // TODO Desinscrever dos tópicos.
   }
 
@@ -82,7 +84,7 @@ public class ControllerImpl implements Controller {
 
     byte[] payload = devicesAndScoresMap.toString().getBytes();
 
-    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+    mqttClientFog.publish(TOP_K_FOG_RES + id, payload, 1);
 
     this.removeRequest(id);
   }
@@ -128,7 +130,7 @@ public class ControllerImpl implements Controller {
   public void sendInvalidTopKMessage(String topicId, String message) {
     printlnDebug(message);
 
-    MQTTClientUp.publish(INVALID_TOP_K_FOG + topicId, message.getBytes(), QOS);
+    mqttClientFog.publish(INVALID_TOP_K_FOG + topicId, message.getBytes(), QOS);
     
   }
 
@@ -157,12 +159,12 @@ public class ControllerImpl implements Controller {
     this.debugModeValue = debugModeValue;
   }
 
-  public MQTTClient getMQTTClientUp() {
-    return this.MQTTClientUp;
+  public MQTTClient getMqttClientFog() {
+    return this.mqttClientFog;
   }
 
-  public void setMQTTClientUp(MQTTClient MQTTClientUp) {
-    this.MQTTClientUp = MQTTClientUp;
+  public void setMqttClientFog(MQTTClient mqttClientFog) {
+    this.mqttClientFog = mqttClientFog;
   }
 
   private void printlnDebug(String str) {
@@ -175,12 +177,12 @@ public class ControllerImpl implements Controller {
     this.topKScores = topKScores;
   }
 
-  public MQTTClient getMQTTClientHost() {
-    return this.MQTTClientHost;
+  public MQTTClient getMqttClientEdge() {
+    return this.mqttClientEdge;
   }
 
-  public void setMQTTClientHost(MQTTClient mQTTClientHost) {
-    this.MQTTClientHost = mQTTClientHost;
+  public void setMqttClientEdge(MQTTClient mqttClientEdge) {
+    this.mqttClientEdge = mqttClientEdge;
   }
 
   @Override
@@ -189,6 +191,6 @@ public class ControllerImpl implements Controller {
       .toString()
       .getBytes();
 
-    this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
+    this.mqttClientFog.publish(TOP_K_FOG_RES + topicId, payload, QOS);
   }
 }
