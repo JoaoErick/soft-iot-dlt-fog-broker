@@ -6,7 +6,7 @@
              http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd
              http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 
-    <bean id="MQTTClientHost" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <bean id="mqttClientEdge" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip}" />
@@ -15,7 +15,7 @@
         <property name="password" value="${pass}" />
     </bean>
 
-    <bean id="MQTTClientUp" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <bean id="mqttClientFog" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip}" />
@@ -27,8 +27,8 @@
     <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
-        <property name="MQTTClientHost" ref="MQTTClientHost" />
-        <property name="MQTTClientUp" ref="MQTTClientUp" />
+        <property name="mqttClientEdge" ref="mqttClientEdge" />
+        <property name="mqttClientFog" ref="mqttClientFog" />
         <property name="childs" value="${childs}" />
     </bean>
 
