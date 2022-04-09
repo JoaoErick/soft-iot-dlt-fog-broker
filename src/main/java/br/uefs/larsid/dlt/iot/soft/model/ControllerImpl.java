@@ -1,6 +1,7 @@
 package br.uefs.larsid.dlt.iot.soft.model;
 
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerCloud;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
@@ -15,7 +16,7 @@ public class ControllerImpl implements Controller {
   /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
   private static final String TOP_K_CLOUD = "TOP_K_HEALTH_CLOUD/#";
-  private static final String TOP_K_CLOUD_RES = "TOP_K_HEALTH_CLOUD_RES/";
+  // private static final String TOP_K_CLOUD_RES = "TOP_K_HEALTH_CLOUD_RES/";
   private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_FOG_RES = "TOP_K_HEALTH_FOG_RES/";
   private static final String TOP_K_BOTTOM_RES = "TOP_K_HEALTH_RES/#";
@@ -24,8 +25,9 @@ public class ControllerImpl implements Controller {
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
-  private MQTTClient mqttClientEdge;
-  private MQTTClient mqttClientFog;
+  private MQTTClient mqttClientCloud;
+  private MQTTClient mqttClientFogBroker;
+  private MQTTClient mqttClientBottomBroker;
   private String childs;
   public Map<String, Map<String, Integer>> topKScores = new HashMap<String, Map<String, Integer>>();
 
@@ -35,27 +37,62 @@ public class ControllerImpl implements Controller {
    * Inicialização do Bundle.
    */
   public void start() {
-    this.mqttClientEdge.connect();
-    this.mqttClientFog.connect();
+    this.mqttClientCloud.connect();
+    this.mqttClientFogBroker.connect();
+    this.mqttClientBottomBroker.connect();
 
-    new Listener(this, mqttClientEdge, INVALID_TOP_K, QOS, debugModeValue);
-    new Listener(this, mqttClientEdge, TOP_K_BOTTOM_RES, QOS, debugModeValue);
+    printlnDebug(String.format("Gateways connected: %s", this.childs));
+
+    /* Escuta as publicações de Top-K inválido do BottomBroker. */
+    new Listener(
+      this,
+      mqttClientBottomBroker,
+      INVALID_TOP_K,
+      QOS,
+      debugModeValue
+    );
+    /* Escuta as publicações de Top-K inválido do BottomBroker. */
+    new Listener(
+      this,
+      mqttClientBottomBroker,
+      TOP_K_BOTTOM_RES,
+      QOS,
+      debugModeValue
+    );
+    /* Escuta as publicações do FogBroker de cima e publica no BottomBroker. */
     new ListenerTopK(
       this,
-      mqttClientFog,
-      mqttClientEdge,
+      mqttClientFogBroker,
+      mqttClientBottomBroker,
       TOP_K_FOG,
       QOS,
       debugModeValue
     );
+
+    /* Somente se tiver outros gateways conectados a mim, ou seja, estou na 
+    camada FogGateway. */
+    if (Integer.parseInt(this.childs) > 0) {
+      /* Escuta as publicações da Cloud e e publica no FogBroker de baixo e no
+      próprio BottomBroker. */
+      new ListenerCloud(
+        this,
+        mqttClientCloud,
+        mqttClientFogBroker,
+        mqttClientBottomBroker,
+        TOP_K_CLOUD,
+        QOS,
+        debugModeValue
+      );
+    }
   }
 
   /**
    * Finalização do Bundle.
    */
   public void stop() {
-    this.mqttClientEdge.disconnect();
-    this.mqttClientFog.disconnect();
+    this.mqttClientCloud.disconnect();
+    this.mqttClientFogBroker.disconnect();
+    this.mqttClientBottomBroker.disconnect();
     // TODO Desinscrever dos tópicos.
   }
 
@@ -84,7 +121,7 @@ public class ControllerImpl implements Controller {
 
     byte[] payload = devicesAndScoresMap.toString().getBytes();
 
-    mqttClientFog.publish(TOP_K_FOG_RES + id, payload, 1);
+    mqttClientFogBroker.publish(TOP_K_FOG_RES + id, payload, 1);
 
     this.removeRequest(id);
   }
@@ -130,8 +167,11 @@ public class ControllerImpl implements Controller {
   public void sendInvalidTopKMessage(String topicId, String message) {
     printlnDebug(message);
 
-    mqttClientFog.publish(INVALID_TOP_K_FOG + topicId, message.getBytes(), QOS);
-    
+    mqttClientFogBroker.publish(
+      INVALID_TOP_K_FOG + topicId,
+      message.getBytes(),
+      QOS
+    );
   }
 
   /**
@@ -159,12 +199,12 @@ public class ControllerImpl implements Controller {
     this.debugModeValue = debugModeValue;
   }
 
-  public MQTTClient getMqttClientFog() {
-    return this.mqttClientFog;
+  public MQTTClient getMqttClientFogBroker() {
+    return this.mqttClientFogBroker;
   }
 
-  public void setMqttClientFog(MQTTClient mqttClientFog) {
-    this.mqttClientFog = mqttClientFog;
+  public void setMqttClientFogBroker(MQTTClient mqttClientFogBroker) {
+    this.mqttClientFogBroker = mqttClientFogBroker;
   }
 
   private void printlnDebug(String str) {
@@ -177,12 +217,12 @@ public class ControllerImpl implements Controller {
     this.topKScores = topKScores;
   }
 
-  public MQTTClient getMqttClientEdge() {
-    return this.mqttClientEdge;
+  public MQTTClient getMqttClientBottomBroker() {
+    return this.mqttClientBottomBroker;
   }
 
-  public void setMqttClientEdge(MQTTClient mqttClientEdge) {
-    this.mqttClientEdge = mqttClientEdge;
+  public void setMqttClientBottomBroker(MQTTClient mqttClientBottomBroker) {
+    this.mqttClientBottomBroker = mqttClientBottomBroker;
   }
 
   @Override
@@ -191,6 +231,14 @@ public class ControllerImpl implements Controller {
       .toString()
       .getBytes();
 
-    this.mqttClientFog.publish(TOP_K_FOG_RES + topicId, payload, QOS);
+    this.mqttClientFogBroker.publish(TOP_K_FOG_RES + topicId, payload, QOS);
+  }
+
+  public MQTTClient getMqttClientCloud() {
+    return mqttClientCloud;
+  }
+
+  public void setMqttClientCloud(MQTTClient mqttClientCloud) {
+    this.mqttClientCloud = mqttClientCloud;
   }
 }
