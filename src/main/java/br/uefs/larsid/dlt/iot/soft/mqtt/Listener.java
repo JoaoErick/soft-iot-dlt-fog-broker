@@ -14,29 +14,29 @@ public class Listener implements IMqttMessageListener {
 
   private boolean debugModeValue;
   private Controller controllerImpl;
-  private MQTTClient mqttClientEdge;
+  private MQTTClient mqttClientBottomBroker;
 
   /**
    * Método Construtor
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
-   * @param mqttClientEdge MQTTClient - Cliente MQTT do gateway inferior.
+   * @param mqttClientBottomBroker MQTTClient - Cliente MQTT do gateway inferior.
    * @param topic String - Tópico que será ouvido
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public Listener(
     Controller controllerImpl,
-    MQTTClient mqttClientEdge,
+    MQTTClient mqttClientBottomBroker,
     String topic,
     int qos,
     boolean debugModeValue
   ) {
     this.controllerImpl = controllerImpl;
-    this.mqttClientEdge = mqttClientEdge;
+    this.mqttClientBottomBroker = mqttClientBottomBroker;
     this.debugModeValue = debugModeValue;
 
-    this.mqttClientEdge.subscribe(qos, this, topic);
+    this.mqttClientBottomBroker.subscribe(qos, this, topic);
   }
 
   /**
@@ -88,16 +88,8 @@ public class Listener implements IMqttMessageListener {
    * @param str
    */
   private void printlnDebug(String str) {
-    if (isDebugModeValue()) {
+    if (debugModeValue) {
       System.out.println(str);
     }
-  }
-
-  public boolean isDebugModeValue() {
-    return debugModeValue;
-  }
-
-  public void setDebugModeValue(boolean debugModeValue) {
-    this.debugModeValue = debugModeValue;
   }
 }
