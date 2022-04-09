@@ -62,21 +62,23 @@ public class ListenerTopK implements IMqttMessageListener {
 
       this.controllerImpl.sendEmptyTopK(params[1]);
     } else {
-      if (params[0].equals(TOP_K_FOG)) {
-        byte[] messageEmpty = "".getBytes();
+      switch (params[0]) {
+        case TOP_K_FOG:
+          byte[] messageEmpty = "".getBytes();
 
-        String topicDown = String.format(
-          "%s/%s/%s",
-          TOP_K_BOTTOM,
-          params[1],
-          params[2]
-        );
+          String topicDown = String.format(
+            "%s/%s/%s",
+            TOP_K_BOTTOM,
+            params[1],
+            params[2]
+          );
 
-        mqttClientEdge.publish(topicDown, messageEmpty, QOS);
+          mqttClientEdge.publish(topicDown, messageEmpty, QOS);
 
-        Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
+          Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
 
-        controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+          controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+          break;
       }
     }
   }
