@@ -1,5 +1,7 @@
 package br.uefs.larsid.dlt.iot.soft.services;
 
+import br.uefs.larsid.dlt.iot.soft.entity.Device;
+import java.util.List;
 import java.util.Map;
 
 public interface Controller {
@@ -18,4 +20,10 @@ public interface Controller {
   void sendInvalidTopKMessage(String topicId, String message);
 
   void removeRequest(String id);
+
+  String getChilds();
+
+  void updateValuesSensors();
+
+  List<Device> getDevices();
 }
