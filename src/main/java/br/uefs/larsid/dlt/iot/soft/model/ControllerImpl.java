@@ -32,12 +32,14 @@ public class ControllerImpl implements Controller {
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
-  private MQTTClient MQTTClientHost;
   private MQTTClient MQTTClientUp;
+  private MQTTClient MQTTClientHost;
+  private MQTTClient MQTTClientDown;
   private String childs;
   private String urlAPI;
   private Map<String, Map<String, Integer>> topKScores = new HashMap<String, Map<String, Integer>>();
   private List<Device> devices;
+  private Map<String, Integer> responseQueue = new HashMap<String, Integer>();
 
   public ControllerImpl() {}
 
@@ -45,13 +47,17 @@ public class ControllerImpl implements Controller {
    * Inicialização do Bundle.
    */
   public void start() {
-    this.MQTTClientHost.connect();
     this.MQTTClientUp.connect();
+    this.MQTTClientHost.connect();
+    this.MQTTClientDown.connect();
 
     this.loadConnectedDevices(ClientIotService.getApiIot(urlAPI));
 
-    new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
-    new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+    if (Integer.parseInt(this.childs) > 0) {
+      new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+      new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+    }
+
     new ListenerTopK(
       this,
       MQTTClientUp,
@@ -99,16 +105,19 @@ public class ControllerImpl implements Controller {
         for (int j = 0; j < jsonArraySensors.length(); j++) {
           JSONObject jsonSensor = jsonArraySensors.getJSONObject(j);
           Sensor sensor = mapper.readValue(jsonSensor.toString(), Sensor.class);
+          sensor.setUrlAPI(urlAPI);
           tempSensors.add(sensor);
         }
 
         device.setSensors(tempSensors);
       }
     } catch (JsonParseException e) {
+      e.printStackTrace();
       System.out.println(
         "Verify the correct format of 'DevicesConnected' property in configuration file."
       );
     } catch (JsonMappingException e) {
+      e.printStackTrace();
       System.out.println(
         "Verify the correct format of 'DevicesConnected' property in configuration file."
       );
@@ -127,8 +136,12 @@ public class ControllerImpl implements Controller {
   @Override
   public void calculateTopK(String id) {
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
+
+    /* Enquanto a quantidade de respostas da requisição for menor que o número 
+    de nós filhos */
+    while (this.responseQueue.get(id) < Integer.parseInt(this.childs)) {}
+
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
-    printlnDebug("TOP_K Scores Received: " + this.getMapById(id).size());
 
     Map<String, Integer> devicesAndScoresMap = this.getMapById(id);
 
@@ -147,6 +160,7 @@ public class ControllerImpl implements Controller {
     MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
 
     this.removeRequest(id);
+    this.removeSpecificResponse(id);
   }
 
   /**
@@ -158,7 +172,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   *
+   * @param id
    */
   @Override
   public Map<String, Integer> getMapById(String id) {
@@ -166,7 +180,8 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   *
+   * @param id
+   * @param Map
    */
   @Override
   public boolean putScores(String id, Map<String, Integer> fogMap) {
@@ -174,7 +189,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   *
+   * @param mapAsString
    */
   @Override
   public Map<String, Integer> convertStrigToMap(String mapAsString) {
@@ -186,6 +201,10 @@ public class ControllerImpl implements Controller {
       );
   }
 
+  /**
+   * @param topicId
+   * @param message
+   */
   @Override
   public void sendInvalidTopKMessage(String topicId, String message) {
     printlnDebug(message);
@@ -200,6 +219,43 @@ public class ControllerImpl implements Controller {
   @Override
   public void removeRequest(String id) {
     this.topKScores.remove(id);
+  }
+
+  /**
+   * Cria uma nova chave no mapa de resposta dos filhos.
+   *
+   * @param key String - Id da requisição.
+   */
+  @Override
+  public void addReponse(String key) {
+    responseQueue.put(key, 0);
+
+    // TODO: Remover.
+    printlnDebug("QTD RESPOSTAS (vazio): " + responseQueue.get(key));
+  }
+
+  /**
+   * Assim autaliza a quantidade de respostas.
+   *
+   * @param key String - Id da requisição.
+   */
+  @Override
+  public void updateResponse(String key) {
+    int temp = responseQueue.get(key);
+    responseQueue.put(key, ++temp);
+
+    // TODO: Remover.
+    printlnDebug("QTD RESPOSTAS: " + responseQueue.get(key));
+  }
+
+  /**
+   * Remove uma resposta específica da fila de respostas.
+   *
+   *@param key String - Id da requisição.
+   */
+  @Override
+  public void removeSpecificResponse(String key) {
+    responseQueue.remove(key);
   }
 
   public String getChilds() {
@@ -267,5 +323,13 @@ public class ControllerImpl implements Controller {
 
   public void setDevices(List<Device> devices) {
     this.devices = devices;
+  }
+
+  public MQTTClient getMQTTClientDown() {
+    return MQTTClientDown;
+  }
+
+  public void setMQTTClientDown(MQTTClient mQTTClientDown) {
+    MQTTClientDown = mQTTClientDown;
   }
 }

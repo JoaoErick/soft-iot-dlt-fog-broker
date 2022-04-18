@@ -26,4 +26,10 @@ public interface Controller {
   void updateValuesSensors();
 
   List<Device> getDevices();
+
+  void addReponse(String key);
+
+  void updateResponse(String key);
+
+  void removeSpecificResponse(String key);
 }
