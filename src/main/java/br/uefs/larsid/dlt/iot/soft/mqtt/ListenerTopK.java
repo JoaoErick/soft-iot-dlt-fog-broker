@@ -14,6 +14,7 @@ public class ListenerTopK implements IMqttMessageListener {
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG";
   private static final String TOP_K = "TOP_K_HEALTH";
+  private static final String TOP_K_RES = "TOP_K_HEALTH_RES/";
   private static final String TOP_K_FOG_RES = "TOP_K_HEALTH_FOG_RES/";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/";
   private static final int QOS = 1;
@@ -70,11 +71,14 @@ public class ListenerTopK implements IMqttMessageListener {
       switch (params[0]) {
         case TOP_K_FOG:
           if (Integer.parseInt(controllerImpl.getChilds()) > 0) {
+            /* Criando uma nova chave, no mapa de requisições */
+            this.controllerImpl.addReponse(params[1]);
+
             byte[] messageEmpty = "".getBytes();
 
             String topicDown = String.format(
               "%s/%s/%s",
-              TOP_K,
+              TOP_K_FOG,
               params[1],
               params[2]
             );
@@ -84,6 +88,9 @@ public class ListenerTopK implements IMqttMessageListener {
             Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
 
             controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+
+            /* Executando o cálculo de Top-K. */
+            controllerImpl.calculateTopK(params[1]);
           } else {
             Map<String, Integer> scores = new HashMap<String, Integer>();
 
@@ -97,6 +104,7 @@ public class ListenerTopK implements IMqttMessageListener {
               printlnDebug("Sorry, there are no devices connected.");
 
               byte[] payload = scores.toString().getBytes();
+              // TODO Verificar se é realmente esse tópico.
               MQTTClientUp.publish(TOP_K_FOG_RES + params[1], payload, 1);
             } else {
               for (Device device : controllerImpl.getDevices()) {
@@ -159,8 +167,90 @@ public class ListenerTopK implements IMqttMessageListener {
 
               byte[] payload = topK.toString().getBytes();
 
-              MQTTClientUp.publish(TOP_K_FOG_RES + params[1], payload, 1);
+              MQTTClientUp.publish(TOP_K_RES + params[1], payload, 1);
             }
+          }
+          // TODO: Enviar para cima o Top-K.
+
+          break;
+        case TOP_K:
+          if (Integer.parseInt(controllerImpl.getChilds()) == 0) {
+            // Map<String, Integer> scores = new HashMap<String, Integer>();
+
+            // printlnDebug("Calculating scores from devices...");
+
+            // /* Consumindo apiIot para pegar os valores mais atualizados dos
+            // .dispositivos */
+            // controllerImpl.updateValuesSensors();
+
+            // if (controllerImpl.getDevices().isEmpty()) {
+            //   printlnDebug("Sorry, there are no devices connected.");
+
+            //   byte[] payload = scores.toString().getBytes();
+            //   MQTTClientUp.publish(TOP_K_FOG_RES + params[1], payload, 1);
+            // } else {
+            //   for (Device device : controllerImpl.getDevices()) {
+            //     // TODO: Implementar função para cálculo do score.
+            //     Random random = new Random();
+            //     int score = random.nextInt(51);
+
+            //     scores.put(device.getId(), score);
+            //   }
+
+            //   scores
+            //     .entrySet()
+            //     .stream()
+            //     .sorted(
+            //       Map.Entry.<String, Integer>comparingByValue(
+            //         Comparator.reverseOrder()
+            //       )
+            //     );
+
+            //   Object[] temp = scores.entrySet().toArray();
+
+            //   if (debugModeValue) {
+            //     for (Object e : temp) {
+            //       printlnDebug(
+            //         ((Map.Entry<String, Integer>) e).getKey() +
+            //         " : " +
+            //         ((Map.Entry<String, Integer>) e).getValue()
+            //       );
+            //     }
+            //   }
+
+            //   Map<String, Integer> topK = new HashMap<String, Integer>();
+
+            //   /* Caso a quantidade de dispositivos conectados seja menor que a
+            //   quantidade requisitada. */
+            //   int maxIteration = k <= scores.size() ? k : scores.size();
+
+            //   /* Pegando os k piores */
+            //   for (int i = 0; i < maxIteration; i++) {
+            //     Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) temp[i];
+            //     topK.put(e.getKey(), e.getValue());
+            //   }
+
+            //   if (k > scores.size()) {
+            //     printlnDebug("Invalid Top-K!");
+
+            //     byte[] payload = String
+            //       .format(
+            //         "Can't possible calculate the Top-%s, sending the Top-%s!",
+            //         k,
+            //         scores.size()
+            //       )
+            //       .getBytes();
+
+            //     MQTTClientUp.publish(INVALID_TOP_K + params[1], payload, 1);
+            //   }
+
+            //   printlnDebug("TOP_K => " + topK.toString());
+            //   printlnDebug("=========================================");
+
+            //   byte[] payload = topK.toString().getBytes();
+
+            //   MQTTClientUp.publish(TOP_K_RES + params[1], payload, 1);
+            // }
           }
 
           break;
