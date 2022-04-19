@@ -84,7 +84,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   *
+   * Atualiza os valores dos sensores.
    */
   public void updateValuesSensors() {
     for (Device d : this.devices) {
@@ -93,8 +93,9 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * 
-   * @param strDevices
+   * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
+   *
+   * @param strDevices String - Dispositivos requisitados.
    */
   private void loadConnectedDevices(String strDevices) {
     List<Device> devicesTemp = new ArrayList<Device>();
@@ -147,6 +148,7 @@ public class ControllerImpl implements Controller {
    * Calcula o Top-K dos Top-Ks recebidos.
    *
    * @param id String - Id da requisição.
+   * @param k int - Quantidade de scores.
    */
   @Override
   public void calculateTopK(String id, int k) {
@@ -199,7 +201,12 @@ public class ControllerImpl implements Controller {
   }
 
   /**
+   *  Retorna o mapa de requisições do sistema, composto pelo
+   * id da requisição (chave) e o mapa de scores (valor).
+   * O mapa de scores é composto pelo nome do dispositivo (Chave)
+   * e o score (valor) associado.
    *
+   * @return Map
    */
   @Override
   public Map<String, Map<String, Integer>> getTopKScores() {
@@ -207,7 +214,11 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * @param id
+   * Retorna o mapa de scores de acordo com o id da requisição
+   * passado por parâmetro.
+   *
+   * @param id String - Id da requisição.
+   * @return Map
    */
   @Override
   public Map<String, Integer> getMapById(String id) {
@@ -215,8 +226,12 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * @param id
-   * @param Map
+   * Adiciona um mapa de scores de uma nova requisição no mapa de
+   * requisições na sua respectiva.
+   *
+   * @param id String - Id da requisição.
+   * @param fogMap Map - Mapa de requisições.
+   * @return boolean
    */
   @Override
   public boolean putScores(String id, Map<String, Integer> fogMap) {
@@ -224,7 +239,10 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * @param mapAsString
+   * Converte uma String em um Map.
+   *
+   * @param mapAsString String - String que deseja converter.
+   * @return Map
    */
   @Override
   public Map<String, Integer> convertStrigToMap(String mapAsString) {
@@ -237,8 +255,11 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * @param topicId
-   * @param message
+   * Envia uma mensagem indicando que o Top-K pedido possui uma quantidade
+   * inválida.
+   *
+   * @param topicId String - Id da requisição do Top-K.
+   * @param message String - Mensagem.
    */
   @Override
   public void sendInvalidTopKMessage(String topicId, String message) {
@@ -248,8 +269,10 @@ public class ControllerImpl implements Controller {
   }
 
   /**
+   * Remove do mapa de requisições o id da requisição junto com mapa de scores
+   * associado a ele.
    *
-   * @param id
+   * @param id String - Id da requisição.
    */
   @Override
   public void removeRequest(String id) {
@@ -259,32 +282,32 @@ public class ControllerImpl implements Controller {
   /**
    * Cria uma nova chave no mapa de resposta dos filhos.
    *
-   * @param key String - Id da requisição.
+   * @param id String - Id da requisição.
    */
   @Override
-  public void addReponse(String key) {
-    responseQueue.put(key, 0);
+  public void addReponse(String id) {
+    responseQueue.put(id, 0);
   }
 
   /**
    * Assim autaliza a quantidade de respostas.
    *
-   * @param key String - Id da requisição.
+   * @param id String - Id da requisição.
    */
   @Override
-  public void updateResponse(String key) {
-    int temp = responseQueue.get(key);
-    responseQueue.put(key, ++temp);
+  public void updateResponse(String id) {
+    int temp = responseQueue.get(id);
+    responseQueue.put(id, ++temp);
   }
 
   /**
    * Remove uma resposta específica da fila de respostas.
    *
-   *@param key String - Id da requisição.
+   *@param id String - Id da requisição.
    */
   @Override
-  public void removeSpecificResponse(String key) {
-    responseQueue.remove(key);
+  public void removeSpecificResponse(String id) {
+    responseQueue.remove(id);
   }
 
   public String getChilds() {
