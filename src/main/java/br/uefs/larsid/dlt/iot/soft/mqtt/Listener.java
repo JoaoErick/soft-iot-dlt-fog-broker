@@ -53,9 +53,6 @@ public class Listener implements IMqttMessageListener {
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
       case TOP_K_RES:
-        /* Adicionando nova requisição. */
-        this.controllerImpl.updateResponse(params[1]);
-
         /* Se o mapa de scores recebido for diferente de vazio. */
         if (!messageContent.equals("{}")) {
           Map<String, Integer> fogMap =
@@ -71,13 +68,13 @@ public class Listener implements IMqttMessageListener {
             controllerImpl.getMapById(params[1]).toString()
           );
 
-          /* Executando o cálculo de Top-K. */
-          // controllerImpl.calculateTopK(params[1]);
+          /* Adicionando nova requisição. */
+          this.controllerImpl.updateResponse(params[1]);
         } else {
           this.controllerImpl.sendEmptyTopK(params[1]);
           this.controllerImpl.removeRequest(params[1]);
         }
-        
+
         break;
       case INVALID_TOP_K:
         printlnDebug("Invalid Top-K!");
