@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface Controller {
-  void calculateTopK(String id);
+  void calculateTopK(String id, int k);
 
   Map<String, Integer> getMapById(String id);
 
