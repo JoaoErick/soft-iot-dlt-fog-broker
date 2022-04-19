@@ -44,14 +44,15 @@ public class ControllerImpl implements Controller {
   public ControllerImpl() {}
 
   /**
-   * Inicialização do Bundle.
+   * Inicializa o bundle.
    */
   public void start() {
+    // TODO: Toda vez que atualizar o arquivo .cfg do mapping, reiniciar este bundle.
     this.MQTTClientUp.connect();
     this.MQTTClientHost.connect();
     this.MQTTClientDown.connect();
 
-    this.loadConnectedDevices(ClientIotService.getApiIot(urlAPI));
+    this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
 
     if (Integer.parseInt(this.childs) > 0) {
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
@@ -61,7 +62,7 @@ public class ControllerImpl implements Controller {
     new ListenerTopK(
       this,
       MQTTClientUp,
-      MQTTClientHost,
+      MQTTClientDown,
       TOP_K,
       QOS,
       debugModeValue
@@ -69,20 +70,32 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Finalização do Bundle.
+   * Finaliza o bundle.
    */
   public void stop() {
+    // TODO Testar sem o unsubscribe
+    this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
+    this.MQTTClientHost.unsubscribe(TOP_K_RES);
+    this.MQTTClientUp.unsubscribe(TOP_K);
+
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
-    // TODO Desinscrever dos tópicos.
+    this.MQTTClientDown.disconnect();
   }
 
+  /**
+   *
+   */
   public void updateValuesSensors() {
     for (Device d : this.devices) {
       d.getLastValueSensors();
     }
   }
 
+  /**
+   * 
+   * @param strDevices
+   */
   private void loadConnectedDevices(String strDevices) {
     List<Device> devicesTemp = new ArrayList<Device>();
 
@@ -132,9 +145,12 @@ public class ControllerImpl implements Controller {
 
   /**
    * Calcula o Top-K dos Top-Ks recebidos.
+   *
+   * @param id String - Id da requisição.
    */
   @Override
-  public void calculateTopK(String id) {
+  public void calculateTopK(String id, int k) {
+    // TODO: Adicionar o K como parâmetro da função
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
 
     /* Enquanto a quantidade de respostas da requisição for menor que o número 
@@ -145,17 +161,36 @@ public class ControllerImpl implements Controller {
 
     Map<String, Integer> devicesAndScoresMap = this.getMapById(id);
 
-    devicesAndScoresMap
+    /* Reordenando o mapa de respostas (Ex: {device2=23, device1=14}) e 
+    atribuindo-o à carga de mensagem do MQTT */
+    Object[] temp = devicesAndScoresMap
       .entrySet()
       .stream()
       .sorted(
         Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
-      );
+      )
+      .toArray();
+
+    Map<String, Integer> topK = new HashMap<String, Integer>();
+
+    /* Caso a quantidade de dispositivos conectados seja menor que a 
+    quantidade requisitada. */
+    int maxIteration = k <= devicesAndScoresMap.size()
+      ? k
+      : devicesAndScoresMap.size();
+
+    /* Pegando os k piores */
+    for (int i = 0; i < maxIteration; i++) {
+      Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) temp[i];
+      topK.put(e.getKey(), e.getValue());
+    }
 
     printlnDebug("Top-K Result => " + devicesAndScoresMap.toString());
     printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
 
-    byte[] payload = devicesAndScoresMap.toString().getBytes();
+    byte[] payload = topK.toString().getBytes();
+
+    //TODO: Corrigir reconexão com o Broker.
 
     MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
 
@@ -229,9 +264,6 @@ public class ControllerImpl implements Controller {
   @Override
   public void addReponse(String key) {
     responseQueue.put(key, 0);
-
-    // TODO: Remover.
-    printlnDebug("QTD RESPOSTAS (vazio): " + responseQueue.get(key));
   }
 
   /**
@@ -243,9 +275,6 @@ public class ControllerImpl implements Controller {
   public void updateResponse(String key) {
     int temp = responseQueue.get(key);
     responseQueue.put(key, ++temp);
-
-    // TODO: Remover.
-    printlnDebug("QTD RESPOSTAS: " + responseQueue.get(key));
   }
 
   /**
