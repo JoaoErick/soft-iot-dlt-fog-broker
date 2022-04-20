@@ -40,7 +40,7 @@
         <property name="MQTTClientHost" ref="MQTTClientHost" />
         <property name="MQTTClientDown" ref="MQTTClientDown" />
         <property name="urlAPI" value="${urlAPI}" />
-        <property name="childs" value="${childs}" />
+        <property name="nodes" value="${nodes}" />
     </bean>
 
   <cm:property-placeholder
@@ -55,7 +55,7 @@
 			<cm:property name="pass" value="karaf" />
 			<cm:property name="urlAPI" value="http://localhost:8181/cxf/iot-service/devices" />
 			<cm:property name="debugModeValue" value="true" />
-			<cm:property name="childs" value="1" />
+			<cm:property name="nodes" value="1" />
 		</cm:default-properties>
 	</cm:property-placeholder>
 
