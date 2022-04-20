@@ -7,7 +7,7 @@ Atualmente o `soft-iot-dlt-fog-broker` trabalha junto com o [`SOFT-IoT-Bottom-Br
 ### Modelo da arquitetura
 
 <p align="center">
-  <img src="./assets/architecture-diagram.png" width="580px" />
+  <img src="./assets/architecture-diagram-fog-broker.png" width="580px" />
 </p>
 
 ## Configurações
