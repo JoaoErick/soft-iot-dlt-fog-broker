@@ -11,6 +11,12 @@ public class ClientIotService {
 
   private static int HTTP_SUCCESS = 200;
 
+  /**
+   * Solicita os dispositivos que estão conectados atraés da API.
+   *
+   * @param urlAPI String - Url da API.
+   * @return String
+   */
   public static String getApiIot(String urlAPI) {
     try {
       URL url = new URL(urlAPI);
