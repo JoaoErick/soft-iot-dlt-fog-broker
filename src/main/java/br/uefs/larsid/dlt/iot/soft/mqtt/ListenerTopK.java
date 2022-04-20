@@ -1,11 +1,8 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
-import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Random;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -23,6 +20,7 @@ public class ListenerTopK implements IMqttMessageListener {
   private MQTTClient MQTTClientUp;
   private MQTTClient MQTTClientDown;
   private Controller controllerImpl;
+  private final int amountNodes;
 
   /**
    *
@@ -45,107 +43,74 @@ public class ListenerTopK implements IMqttMessageListener {
     this.MQTTClientDown = MQTTClientDown;
     this.controllerImpl = controllerImpl;
     this.debugModeValue = debugModeValue;
+    this.amountNodes = Integer.parseInt(controllerImpl.getNodes());
+
     this.MQTTClientUp.subscribe(qos, this, topic);
   }
 
-  /**
-   *
-   */
   @Override
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
+    /*params = [topic, id, k] */
     final String[] params = topic.split("/");
 
     final int k = Integer.valueOf(params[2]);
 
     printlnDebug("==== Fog UP gateway -> Fog gateway  ====");
-
     printlnDebug("Request received: " + topic);
 
     if (k == 0) {
-      printlnDebug("Top-K = 0");
+      if (this.amountNodes > 0) {
+        printlnDebug("Top-K = 0");
 
-      this.controllerImpl.sendEmptyTopK(params[1]);
+        this.controllerImpl.sendEmptyTopK(params[1]);
+      }
     } else {
       switch (params[0]) {
         case TOP_K_FOG:
-          if (Integer.parseInt(controllerImpl.getChilds()) > 0) {
+          if (this.amountNodes > 0) {
             /* Criando uma nova chave, no mapa de requisições */
             this.controllerImpl.addReponse(params[1]);
 
             byte[] messageEmpty = "".getBytes();
 
             String topicDown = String.format(
-              "%s/%s/%s",
+              "%s/%s/%d",
               TOP_K_FOG,
               params[1],
-              params[2]
+              k
             );
 
             MQTTClientDown.publish(topicDown, messageEmpty, QOS);
 
-            Map<String, Integer> scoreMapEmpty = new HashMap<String, Integer>();
+            Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
 
-            controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+            this.controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
 
-            /* Executando o cálculo de Top-K. */
-            controllerImpl.calculateTopK(params[1], Integer.parseInt(params[2]));
+            /* Publicando para a camada superior o Top-K resultante. */
+            this.controllerImpl.publishTopK(params[1], k);
           } else {
-            Map<String, Integer> scores = new HashMap<String, Integer>();
-
             printlnDebug("Calculating scores from devices...");
+
+            Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
             /* Consumindo apiIot para pegar os valores mais atualizados dos 
             .dispositivos */
-            controllerImpl.updateValuesSensors();
+            this.controllerImpl.updateValuesSensors();
 
-            if (controllerImpl.getDevices().isEmpty()) {
+            if (this.controllerImpl.getDevices().isEmpty()) {
               printlnDebug("Sorry, there are no devices connected.");
 
               byte[] payload = scores.toString().getBytes();
-              // TODO Verificar se é realmente esse tópico.
+
               MQTTClientUp.publish(TOP_K_FOG_RES + params[1], payload, 1);
             } else {
-              for (Device device : controllerImpl.getDevices()) {
-                // TODO: Implementar função para cálculo do score.
-                Random random = new Random();
-                int score = random.nextInt(51);
+              scores = this.controllerImpl.calculateScores();
 
-                scores.put(device.getId(), score);
-              }
-
-              /* Ordenando o Map de Scores e colocando-o em um array. */
-              Object[] temp = scores
-                .entrySet()
-                .stream()
-                .sorted(
-                  Map.Entry.<String, Integer>comparingByValue(
-                    Comparator.reverseOrder()
-                  )
-                )
-                .toArray();
-
-              if (debugModeValue) {
-                for (Object e : temp) {
-                  printlnDebug(
-                    ((Map.Entry<String, Integer>) e).getKey() +
-                    " : " +
-                    ((Map.Entry<String, Integer>) e).getValue()
-                  );
-                }
-              }
-
-              Map<String, Integer> topK = new HashMap<String, Integer>();
-
-              /* Caso a quantidade de dispositivos conectados seja menor que a 
-              quantidade requisitada. */
-              int maxIteration = k <= scores.size() ? k : scores.size();
-
-              /* Pegando os k piores */
-              for (int i = 0; i < maxIteration; i++) {
-                Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) temp[i];
-                topK.put(e.getKey(), e.getValue());
-              }
+              /* Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e 
+              atribuindo-o à carga de mensagem do MQTT */
+              Map<String, Integer> topK =
+                this.controllerImpl.sortTopK(scores, k);
 
               if (k > scores.size()) {
                 printlnDebug("Invalid Top-K!");
