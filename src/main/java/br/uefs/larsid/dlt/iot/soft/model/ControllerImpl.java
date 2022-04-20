@@ -48,7 +48,6 @@ public class ControllerImpl implements Controller {
    * Inicializa o bundle.
    */
   public void start() {
-    // TODO: Toda vez que atualizar o arquivo .cfg do mapping, reiniciar este bundle.
     this.MQTTClientUp.connect();
     this.MQTTClientHost.connect();
     this.MQTTClientDown.connect();
@@ -90,6 +89,13 @@ public class ControllerImpl implements Controller {
     for (Device d : this.devices) {
       d.getLastValueSensors();
     }
+  }
+
+  /**
+   * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
+   */
+  public void loadConnectedDevices(){
+    this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
   }
 
   /**
