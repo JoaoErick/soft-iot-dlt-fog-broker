@@ -50,12 +50,24 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>br.ufba.dcc.wiser.soft_iot</groupId>
+            <artifactId>soft-iot-mapping-devices</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+        </dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
 			<version>4.3.0</version>
 			<scope>provided</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.framework</artifactId>
+            <version>1.8.0</version>
+            <scope>provided</scope>
+        </dependency>
 		<!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.client.mqttv3 -->
 		<dependency>
 		    <groupId>org.eclipse.paho</groupId>
