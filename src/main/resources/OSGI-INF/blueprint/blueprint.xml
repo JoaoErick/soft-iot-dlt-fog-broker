@@ -6,6 +6,17 @@
              http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd
              http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 
+    <!-- Referência para escutar a mudança no arquivo br.ufba.dcc.wiser.soft_iot.gateway.mapping_devices.cfg -->
+    <reference id="connectedDevices" interface="br.ufba.dcc.wiser.soft_iot.mapping_devices.Controller"
+		availability="optional">
+        <reference-listener bind-method="onBind" unbind-method="onUnbind">
+            <bean class="br.uefs.larsid.dlt.iot.soft.listener.MappingDevicesListener">
+                <property name="debugModeValue" value="${debugModeValue}" />
+                <property name="controllerImpl" ref="controllerImpl" />
+            </bean>
+        </reference-listener>
+    </reference>
+    
     <bean id="MQTTClientUp" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
@@ -33,7 +44,7 @@
         <property name="password" value="${pass}" />
     </bean>
 
-    <bean id="entitiesController" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
+    <bean id="controllerImpl" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="MQTTClientUp" ref="MQTTClientUp" />
