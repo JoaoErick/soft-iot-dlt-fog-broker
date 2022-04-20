@@ -19,6 +19,6 @@ port | Porta para conexão com o *Broker* | 1883
 user | Usuário para conexão com o *Broker* | karaf
 pass | Senha para conexão com o *Broker* | karaf
 debugModeValue | Modo depuração | true
-childs¹ | Quantidade de filhos na camada abaixo | 1
+nodes¹ | Quantidade de filhos na camada abaixo | 1
 
-###### Obs¹: Quantidade de `SOFT-IoT-Bottom-Broker` conectados com o `soft-iot-dlt-fog-broker`.
+###### Obs¹: Quantidade de `soft-iot-dlt-fog-broker` conectados com o `soft-iot-dlt-fog-broker` da camada superior.
