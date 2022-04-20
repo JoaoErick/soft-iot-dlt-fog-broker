@@ -13,9 +13,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,11 +36,11 @@ public class ControllerImpl implements Controller {
   private MQTTClient MQTTClientUp;
   private MQTTClient MQTTClientHost;
   private MQTTClient MQTTClientDown;
-  private String childs;
+  private String nodes;
   private String urlAPI;
-  private Map<String, Map<String, Integer>> topKScores = new HashMap<String, Map<String, Integer>>();
+  private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
-  private Map<String, Integer> responseQueue = new HashMap<String, Integer>();
+  private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
 
   public ControllerImpl() {}
 
@@ -54,7 +55,7 @@ public class ControllerImpl implements Controller {
 
     this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
 
-    if (Integer.parseInt(this.childs) > 0) {
+    if (Integer.parseInt(this.nodes) > 0) {
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
     }
@@ -73,7 +74,6 @@ public class ControllerImpl implements Controller {
    * Finaliza o bundle.
    */
   public void stop() {
-    // TODO Testar sem o unsubscribe
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
     this.MQTTClientUp.unsubscribe(TOP_K);
@@ -145,26 +145,69 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Calcula o Top-K dos Top-Ks recebidos.
+   * Calcula o score dos dispositivos conectados.
    *
-   * @param id String - Id da requisição.
-   * @param k int - Quantidade de scores.
+   * @return Map
    */
   @Override
-  public void calculateTopK(String id, int k) {
-    // TODO: Adicionar o K como parâmetro da função
+  public Map<String, Integer> calculateScores() {
+    Map<String, Integer> temp = new LinkedHashMap<String, Integer>();
+
+    for (Device device : this.devices) {
+      // TODO: Implementar função para cálculo do score.
+      Random random = new Random();
+      int score = random.nextInt(51);
+
+      temp.put(device.getId(), score);
+    }
+
+    return temp;
+  }
+
+  /**
+   * Publica o Top-K calculado para a camada de cima.
+   *
+   * @param id String - Id da requisição.
+   * @param k int - Quantidade de scores requisitados.
+   */
+  @Override
+  public void publishTopK(String id, int k) {
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
 
     /* Enquanto a quantidade de respostas da requisição for menor que o número 
     de nós filhos */
-    while (this.responseQueue.get(id) < Integer.parseInt(this.childs)) {}
+    while (this.responseQueue.get(id) < Integer.parseInt(this.nodes)) {}
 
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
 
-    Map<String, Integer> devicesAndScoresMap = this.getMapById(id);
-
-    /* Reordenando o mapa de respostas (Ex: {device2=23, device1=14}) e 
+    /* Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e 
     atribuindo-o à carga de mensagem do MQTT */
+    Map<String, Integer> topK = sortTopK(this.getMapById(id), k);
+
+    printlnDebug("Top-K Result => " + topK.toString());
+    printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
+
+    byte[] payload = topK.toString().getBytes();
+
+    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+
+    this.removeRequest(id);
+    this.removeSpecificResponse(id);
+  }
+
+  /**
+   * Calcula o Top-K.
+   *
+   * @param devicesAndScoresMap Map - Mapa de Top-K
+   * @param k int - Quantidade de scores requisitados.
+   * @return Map
+   *
+   */
+  @Override
+  public Map<String, Integer> sortTopK(
+    Map<String, Integer> devicesAndScoresMap,
+    int k
+  ) {
     Object[] temp = devicesAndScoresMap
       .entrySet()
       .stream()
@@ -173,7 +216,17 @@ public class ControllerImpl implements Controller {
       )
       .toArray();
 
-    Map<String, Integer> topK = new HashMap<String, Integer>();
+    if (debugModeValue) {
+      for (Object e : temp) {
+        printlnDebug(
+          ((Map.Entry<String, Integer>) e).getKey() +
+          " : " +
+          ((Map.Entry<String, Integer>) e).getValue()
+        );
+      }
+    }
+
+    Map<String, Integer> topK = new LinkedHashMap<String, Integer>();
 
     /* Caso a quantidade de dispositivos conectados seja menor que a 
     quantidade requisitada. */
@@ -187,17 +240,7 @@ public class ControllerImpl implements Controller {
       topK.put(e.getKey(), e.getValue());
     }
 
-    printlnDebug("Top-K Result => " + devicesAndScoresMap.toString());
-    printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
-
-    byte[] payload = topK.toString().getBytes();
-
-    //TODO: Corrigir reconexão com o Broker.
-
-    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
-
-    this.removeRequest(id);
-    this.removeSpecificResponse(id);
+    return topK;
   }
 
   /**
@@ -310,12 +353,12 @@ public class ControllerImpl implements Controller {
     responseQueue.remove(id);
   }
 
-  public String getChilds() {
-    return childs;
+  public String getNodes() {
+    return nodes;
   }
 
-  public void setChilds(String childs) {
-    this.childs = childs;
+  public void setNodes(String nodes) {
+    this.nodes = nodes;
   }
 
   public boolean isDebugModeValue() {
@@ -354,7 +397,7 @@ public class ControllerImpl implements Controller {
 
   @Override
   public void sendEmptyTopK(String topicId) {
-    byte[] payload = new HashMap<String, Map<String, Integer>>()
+    byte[] payload = new LinkedHashMap<String, Map<String, Integer>>()
       .toString()
       .getBytes();
 
