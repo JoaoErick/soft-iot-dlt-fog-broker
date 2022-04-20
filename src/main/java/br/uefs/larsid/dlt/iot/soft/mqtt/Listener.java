@@ -39,9 +39,6 @@ public class Listener implements IMqttMessageListener {
     this.MQTTClientHost.subscribe(qos, this, topic);
   }
 
-  /**
-   *
-   */
   @Override
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
@@ -77,6 +74,7 @@ public class Listener implements IMqttMessageListener {
 
         break;
       case INVALID_TOP_K:
+        //TODO: Quando testar com mais de um no bottom e com os dispositivos conectados no Fog, verificar a qtd e talvez enviar um "invalid" para cima
         printlnDebug("Invalid Top-K!");
 
         // this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
