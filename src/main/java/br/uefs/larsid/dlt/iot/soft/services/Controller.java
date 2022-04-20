@@ -39,4 +39,6 @@ public interface Controller {
   void updateResponse(String key);
 
   void removeSpecificResponse(String key);
+
+  void loadConnectedDevices();
 }
