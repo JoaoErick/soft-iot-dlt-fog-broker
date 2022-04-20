@@ -5,7 +5,14 @@ import java.util.List;
 import java.util.Map;
 
 public interface Controller {
-  void calculateTopK(String id, int k);
+  Map<String, Integer> calculateScores();
+
+  Map<String, Integer> sortTopK(
+    Map<String, Integer> devicesAndScoresMap,
+    int k
+  );
+
+  void publishTopK(String id, int k);
 
   Map<String, Integer> getMapById(String id);
 
@@ -21,7 +28,7 @@ public interface Controller {
 
   void removeRequest(String id);
 
-  String getChilds();
+  String getNodes();
 
   void updateValuesSensors();
 
