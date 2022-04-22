@@ -23,6 +23,7 @@ public class ListenerTopK implements IMqttMessageListener {
   private final int amountNodes;
 
   /**
+   * Método construtor.
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientUp MQTTClient - Cliente MQTT do gateway superior.
@@ -95,7 +96,7 @@ public class ListenerTopK implements IMqttMessageListener {
             Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
             /* Consumindo apiIot para pegar os valores mais atualizados dos 
-            .dispositivos */
+            dispositivos. */
             this.controllerImpl.updateValuesSensors();
 
             if (this.controllerImpl.getDevices().isEmpty()) {
@@ -140,10 +141,6 @@ public class ListenerTopK implements IMqttMessageListener {
     }
   }
 
-  /**
-   *
-   * @param str
-   */
   private void printlnDebug(String str) {
     if (debugModeValue) {
       System.out.println(str);
