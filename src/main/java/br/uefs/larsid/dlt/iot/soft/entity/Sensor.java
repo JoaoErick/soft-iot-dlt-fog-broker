@@ -19,6 +19,11 @@ public class Sensor {
 
   public Sensor() {}
 
+  /**
+   * Atualiza o valor do sensor.
+   *
+   * @param idDevice String - Id do dispositivo.
+   */
   public void getValue(String idDevice) {
     String url = String.format("%s/%s/%s", urlAPI, idDevice, this.id);
     String response = ClientIotService.getApiIot(url);

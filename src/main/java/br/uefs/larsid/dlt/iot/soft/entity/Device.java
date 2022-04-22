@@ -14,6 +14,12 @@ public class Device {
 
   public Device() {}
 
+  /**
+   * Retorna um sensor pelo id do mesmo. 
+   *
+   * @param sensorId String - Id do sensor.
+   * @return Sensor
+   */
   public Sensor getSensorbySensorId(String sensorId) {
     for (Sensor sensor : sensors) {
       if (sensor.getId().contentEquals(sensorId)) return sensor;
@@ -21,6 +27,9 @@ public class Device {
     return null;
   }
 
+  /**
+   * Retorna o valor mais atual dos sensores do dispositivo.
+   */
   public void getLastValueSensors() {
     for (Sensor s : this.sensors) {
       s.getValue(this.id);
