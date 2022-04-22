@@ -1,8 +1,7 @@
 # soft-iot-dlt-fog-broker
 
-O `soft-iot-dlt-fog-broker` é o *bundle* responsável por realizar o cálculo de [Top-K](https://www.sciencedirect.com/science/article/abs/pii/S002002551830714X#:~:text=A%20Top-k%20retrieval%20algorithm%20returns%20the%20k%20best%20answers,take%20into%20consideration%20execution%20time.) dos dispositivos a partir de uma requisição feita por um *Client* superior. Ele utiliza o protocolo MQTT, tanto para receber quanto para enviar requisiçõe. Para realizar o cálculo, este *bundlle* pede para a camada de baixo (caso exista) o Top-K dos dispositivos que estão conectadas com ela. Com base nas respostas das camadas inferiores, ele recalcula o Top-K, e então devolve  o resultado para o *Client* que solicitou.
-
-Atualmente o `soft-iot-dlt-fog-broker` trabalha junto com o [`SOFT-IoT-Bottom-Broker`](https://github.com/larsid/SOFT-IoT-Bottom-Broker), sendo que este último está em uma camada abaixo do `soft-iot-dlt-fog-broker`.
+O `soft-iot-dlt-fog-broker` é o *bundle* genérico que pode atuar tanto na camada *Edge* quanto na *Fog*. Ele responsável por realizar o cálculo de [Top-K](https://www.sciencedirect.com/science/article/abs/pii/S002002551830714X#:~:text=A%20Top-k%20retrieval%20algorithm%20returns%20the%20k%20best%20answers,take%20into%20consideration%20execution%20time.) dos dispositivos a partir de uma requisição feita por um *Client* superior. <br/>
+Para a comunicação, é utilizado o protocolo MQTT. 
 
 ### Modelo da arquitetura
 
@@ -14,11 +13,15 @@ Atualmente o `soft-iot-dlt-fog-broker` trabalha junto com o [`SOFT-IoT-Bottom-Br
 
 Propriedade | Descrição | Valor Padrão
 ------------|-----------|-------------
-ip | Endereço IP para conexão com o *Broker* | localhost
+ip_up | Endereço IP do *Client* situado na camada acima | localhost
+ip | Endereço IP de onde o *Bundle* está sendo executado | localhost 
+ip_down¹ | Endereço IP do *Client* situado na camada abaixo | localhost
 port | Porta para conexão com o *Broker* | 1883
 user | Usuário para conexão com o *Broker* | karaf
 pass | Senha para conexão com o *Broker* | karaf
+urlAPI | URL da API onde estão os dispositivos | http://localhost:8181/cxf/iot-service/devices
 debugModeValue | Modo depuração | true
-nodes¹ | Quantidade de filhos na camada abaixo | 1
+nodes² | Quantidade de filhos na camada abaixo | 1
 
-###### Obs¹: Quantidade de `soft-iot-dlt-fog-broker` conectados com o `soft-iot-dlt-fog-broker` da camada superior.
+###### Obs¹: Caso o *Bundle* esteja sendo executado na camada mais baixa (`nodes=0`), a configuração pode ser mantida como: `ip_down=localhost`;
+###### Obs²: Quantidade de `soft-iot-dlt-fog-broker` conectados com o `soft-iot-dlt-fog-broker` da camada superior.
