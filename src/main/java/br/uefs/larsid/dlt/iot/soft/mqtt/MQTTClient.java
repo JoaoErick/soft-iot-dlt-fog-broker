@@ -26,13 +26,10 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   private MqttConnectOptions mqttOptions;
   private boolean debugModeValue;
 
-  /**
-   * 
-   */
   public MQTTClient() {}
 
   /**
-   * 
+   * Inicializa o bundle.
    */
   public void start() {
     printlnDebug("Starting SOFT-IoT-Fog-Broker bundle...");
@@ -50,7 +47,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   }
 
   /**
-   * 
+   * Finaliza o bundle.
    */
   public void stop() {
     printlnDebug("Finishing SOFT-IoT-Fog-Broker bundle...");

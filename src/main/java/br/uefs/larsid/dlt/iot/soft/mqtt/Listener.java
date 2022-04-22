@@ -17,7 +17,7 @@ public class Listener implements IMqttMessageListener {
   private MQTTClient MQTTClientHost;
 
   /**
-   * Método Construtor
+   * Método Construtor.
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
@@ -39,9 +39,6 @@ public class Listener implements IMqttMessageListener {
     this.MQTTClientHost.subscribe(qos, this, topic);
   }
 
-  /**
-   *
-   */
   @Override
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
@@ -68,25 +65,20 @@ public class Listener implements IMqttMessageListener {
             controllerImpl.getMapById(params[1]).toString()
           );
 
-          /* Executando o cálculo de Top-K. */
-          controllerImpl.calculateTopK(params[1]);
+          /* Adicionando nova requisição. */
+          this.controllerImpl.updateResponse(params[1]);
         } else {
           this.controllerImpl.sendEmptyTopK(params[1]);
           this.controllerImpl.removeRequest(params[1]);
         }
+
         break;
       case INVALID_TOP_K:
         printlnDebug("Invalid Top-K!");
-
-        this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
         break;
     }
   }
 
-  /**
-   *
-   * @param str
-   */
   private void printlnDebug(String str) {
     if (isDebugModeValue()) {
       System.out.println(str);
