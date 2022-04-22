@@ -16,7 +16,7 @@ public interface Controller {
 
   Map<String, Integer> getMapById(String id);
 
-  boolean putScores(String id, Map<String, Integer> fogMap);
+  void putScores(String id, Map<String, Integer> fogMap);
 
   Map<String, Map<String, Integer>> getTopKScores();
 
