@@ -17,7 +17,7 @@ public class Listener implements IMqttMessageListener {
   private MQTTClient MQTTClientHost;
 
   /**
-   * Método Construtor
+   * Método Construtor.
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
@@ -74,18 +74,11 @@ public class Listener implements IMqttMessageListener {
 
         break;
       case INVALID_TOP_K:
-        //TODO: Quando testar com mais de um no bottom e com os dispositivos conectados no Fog, verificar a qtd e talvez enviar um "invalid" para cima
         printlnDebug("Invalid Top-K!");
-
-        // this.controllerImpl.sendInvalidTopKMessage(params[1], messageContent);
         break;
     }
   }
 
-  /**
-   *
-   * @param str
-   */
   private void printlnDebug(String str) {
     if (isDebugModeValue()) {
       System.out.println(str);
