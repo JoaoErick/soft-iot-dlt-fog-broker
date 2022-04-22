@@ -94,7 +94,7 @@ public class ControllerImpl implements Controller {
   /**
    * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
    */
-  public void loadConnectedDevices(){
+  public void loadConnectedDevices() {
     this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
   }
 
@@ -183,6 +183,29 @@ public class ControllerImpl implements Controller {
     /* Enquanto a quantidade de respostas da requisição for menor que o número 
     de nós filhos */
     while (this.responseQueue.get(id) < Integer.parseInt(this.nodes)) {}
+
+    if (!this.devices.isEmpty()) {
+      /* Consumindo apiIot para pegar os valores mais atualizados dos 
+      dispositivos. */
+      this.updateValuesSensors();
+      /* Adicionando os dispositivos conectados em si mesmo. */
+      this.putScores(id, this.calculateScores());
+
+      int topkMapSize = this.topKScores.get(id).size();
+      
+      if (topkMapSize < k) {
+        printlnDebug("Invalid Top-K!");
+
+        this.sendInvalidTopKMessage(
+            id,
+            String.format(
+              "Can't possible calculate the Top-%s, sending the Top-%d!",
+              k,
+              topkMapSize
+            )
+          );
+      }
+    }
 
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
 
@@ -280,11 +303,14 @@ public class ControllerImpl implements Controller {
    *
    * @param id String - Id da requisição.
    * @param fogMap Map - Mapa de requisições.
-   * @return boolean
    */
   @Override
-  public boolean putScores(String id, Map<String, Integer> fogMap) {
-    return this.topKScores.put(id, fogMap).isEmpty();
+  public void putScores(String id, Map<String, Integer> fogMap) {
+    if (this.topKScores.get(id) != null) {
+      this.topKScores.get(id).putAll(fogMap);
+    } else {
+      this.topKScores.put(id, fogMap).isEmpty();
+    }
   }
 
   /**
@@ -359,6 +385,21 @@ public class ControllerImpl implements Controller {
     responseQueue.remove(id);
   }
 
+  @Override
+  public void sendEmptyTopK(String topicId) {
+    byte[] payload = new LinkedHashMap<String, Map<String, Integer>>()
+      .toString()
+      .getBytes();
+
+    this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
+  }
+
+  private void printlnDebug(String str) {
+    if (debugModeValue) {
+      System.out.println(str);
+    }
+  }
+
   public String getNodes() {
     return nodes;
   }
@@ -383,12 +424,6 @@ public class ControllerImpl implements Controller {
     this.MQTTClientUp = MQTTClientUp;
   }
 
-  private void printlnDebug(String str) {
-    if (debugModeValue) {
-      System.out.println(str);
-    }
-  }
-
   public void setTopKScores(Map<String, Map<String, Integer>> topKScores) {
     this.topKScores = topKScores;
   }
@@ -399,15 +434,6 @@ public class ControllerImpl implements Controller {
 
   public void setMQTTClientHost(MQTTClient mQTTClientHost) {
     this.MQTTClientHost = mQTTClientHost;
-  }
-
-  @Override
-  public void sendEmptyTopK(String topicId) {
-    byte[] payload = new LinkedHashMap<String, Map<String, Integer>>()
-      .toString()
-      .getBytes();
-
-    this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
 
   public String getUrlAPI() {
