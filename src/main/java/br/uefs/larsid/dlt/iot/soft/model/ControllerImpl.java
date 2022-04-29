@@ -4,6 +4,7 @@ import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerLoad;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -20,6 +21,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.osgi.service.blueprint.container.ServiceUnavailableException;
 
 public class ControllerImpl implements Controller {
 
@@ -67,6 +69,15 @@ public class ControllerImpl implements Controller {
       QOS,
       debugModeValue
     );
+
+    new ListenerLoad(
+      this,
+      MQTTClientUp,
+      MQTTClientDown,
+      "TestLoad",
+      QOS,
+      debugModeValue
+    );
   }
 
   /**
@@ -94,7 +105,9 @@ public class ControllerImpl implements Controller {
   /**
    * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
    */
+  @Override
   public void loadConnectedDevices() {
+    printlnDebug("!!! LOAD DEVICES PUBLIC !!!");
     this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
   }
 
@@ -131,6 +144,8 @@ public class ControllerImpl implements Controller {
 
         device.setSensors(tempSensors);
       }
+    } catch (ServiceUnavailableException e) {
+      e.printStackTrace();
     } catch (JsonParseException e) {
       e.printStackTrace();
       System.out.println(
@@ -192,7 +207,7 @@ public class ControllerImpl implements Controller {
       this.putScores(id, this.calculateScores());
 
       int topkMapSize = this.topKScores.get(id).size();
-      
+
       if (topkMapSize < k) {
         printlnDebug("Invalid Top-K!");
 
