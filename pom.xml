@@ -50,12 +50,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>br.ufba.dcc.wiser.soft_iot</groupId>
-            <artifactId>soft-iot-mapping-devices</artifactId>
-            <version>1.0.0</version>
-            <scope>provided</scope>
-        </dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
