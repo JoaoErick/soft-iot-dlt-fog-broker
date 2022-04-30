@@ -20,7 +20,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.osgi.service.blueprint.container.ServiceUnavailableException;
 
 public class ControllerImpl implements Controller {
 
