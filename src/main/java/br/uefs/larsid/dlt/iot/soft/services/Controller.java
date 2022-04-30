@@ -30,8 +30,6 @@ public interface Controller {
 
   String getNodes();
 
-  void updateValuesSensors();
-
   List<Device> getDevices();
 
   void addReponse(String key);

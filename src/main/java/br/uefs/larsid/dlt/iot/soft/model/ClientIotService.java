@@ -12,7 +12,7 @@ public class ClientIotService {
   private static int HTTP_SUCCESS = 200;
 
   /**
-   * Solicita os dispositivos que estão conectados atraés da API.
+   * Solicita os dispositivos que estão conectados através da API.
    *
    * @param urlAPI String - Url da API.
    * @return String

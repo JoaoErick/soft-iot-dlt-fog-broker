@@ -52,8 +52,6 @@ public class ControllerImpl implements Controller {
     this.MQTTClientHost.connect();
     this.MQTTClientDown.connect();
 
-    this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
-
     if (Integer.parseInt(this.nodes) > 0) {
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
@@ -83,17 +81,9 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Atualiza os valores dos sensores.
-   */
-  public void updateValuesSensors() {
-    for (Device d : this.devices) {
-      d.getLastValueSensors();
-    }
-  }
-
-  /**
    * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
    */
+  @Override
   public void loadConnectedDevices() {
     this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
   }
@@ -184,15 +174,16 @@ public class ControllerImpl implements Controller {
     de nós filhos */
     while (this.responseQueue.get(id) < Integer.parseInt(this.nodes)) {}
 
+    /* Consumindo apiIot para pegar os valores mais atualizados dos 
+    dispositivos. */
+    this.loadConnectedDevices();
+
     if (!this.devices.isEmpty()) {
-      /* Consumindo apiIot para pegar os valores mais atualizados dos 
-      dispositivos. */
-      this.updateValuesSensors();
       /* Adicionando os dispositivos conectados em si mesmo. */
       this.putScores(id, this.calculateScores());
 
       int topkMapSize = this.topKScores.get(id).size();
-      
+
       if (topkMapSize < k) {
         printlnDebug("Invalid Top-K!");
 
@@ -214,7 +205,7 @@ public class ControllerImpl implements Controller {
     Map<String, Integer> topK = sortTopK(this.getMapById(id), k);
 
     printlnDebug("Top-K Result => " + topK.toString());
-    printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
+    printlnDebug("==== Fog gateway -> Cloud gateway  ====");
 
     byte[] payload = topK.toString().getBytes();
 
