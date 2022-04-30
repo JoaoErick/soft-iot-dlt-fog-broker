@@ -57,7 +57,6 @@ public class ListenerTopK implements IMqttMessageListener {
 
     final int k = Integer.valueOf(params[2]);
 
-    printlnDebug("==== Fog UP gateway -> Fog gateway  ====");
     printlnDebug("Request received: " + topic);
 
     if (k == 0) {
@@ -70,6 +69,7 @@ public class ListenerTopK implements IMqttMessageListener {
       switch (params[0]) {
         case TOP_K_FOG:
           if (this.amountNodes > 0) {
+            printlnDebug("==== Cloud gateway -> Fog gateway  ====");
             /* Criando uma nova chave, no mapa de requisições */
             this.controllerImpl.addReponse(params[1]);
 
@@ -91,13 +91,14 @@ public class ListenerTopK implements IMqttMessageListener {
             /* Publicando para a camada superior o Top-K resultante. */
             this.controllerImpl.publishTopK(params[1], k);
           } else {
+            printlnDebug("==== Fog gateway -> Bottom gateway  ====");
             printlnDebug("Calculating scores from devices...");
 
             Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
             /* Consumindo apiIot para pegar os valores mais atualizados dos 
             dispositivos. */
-            this.controllerImpl.updateValuesSensors();
+            this.controllerImpl.loadConnectedDevices();
 
             if (this.controllerImpl.getDevices().isEmpty()) {
               printlnDebug("Sorry, there are no devices connected.");

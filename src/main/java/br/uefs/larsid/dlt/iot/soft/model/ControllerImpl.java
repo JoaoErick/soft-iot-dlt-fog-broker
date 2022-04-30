@@ -4,7 +4,6 @@ import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
-import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerLoad;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -54,8 +53,6 @@ public class ControllerImpl implements Controller {
     this.MQTTClientHost.connect();
     this.MQTTClientDown.connect();
 
-    this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
-
     if (Integer.parseInt(this.nodes) > 0) {
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
@@ -66,15 +63,6 @@ public class ControllerImpl implements Controller {
       MQTTClientUp,
       MQTTClientDown,
       TOP_K,
-      QOS,
-      debugModeValue
-    );
-
-    new ListenerLoad(
-      this,
-      MQTTClientUp,
-      MQTTClientDown,
-      "TestLoad",
       QOS,
       debugModeValue
     );
@@ -107,7 +95,6 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public void loadConnectedDevices() {
-    printlnDebug("!!! LOAD DEVICES PUBLIC !!!");
     this.loadConnectedDevices(ClientIotService.getApiIot(this.urlAPI));
   }
 
@@ -199,10 +186,11 @@ public class ControllerImpl implements Controller {
     de nós filhos */
     while (this.responseQueue.get(id) < Integer.parseInt(this.nodes)) {}
 
+    /* Consumindo apiIot para pegar os valores mais atualizados dos 
+    dispositivos. */
+    this.loadConnectedDevices();
+
     if (!this.devices.isEmpty()) {
-      /* Consumindo apiIot para pegar os valores mais atualizados dos 
-      dispositivos. */
-      this.updateValuesSensors();
       /* Adicionando os dispositivos conectados em si mesmo. */
       this.putScores(id, this.calculateScores());
 
@@ -229,7 +217,7 @@ public class ControllerImpl implements Controller {
     Map<String, Integer> topK = sortTopK(this.getMapById(id), k);
 
     printlnDebug("Top-K Result => " + topK.toString());
-    printlnDebug("==== Fog gateway -> Fog UP gateway  ====");
+    printlnDebug("==== Fog gateway -> Cloud gateway  ====");
 
     byte[] payload = topK.toString().getBytes();
 
