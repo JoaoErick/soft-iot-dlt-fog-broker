@@ -53,6 +53,7 @@ public class ListenerTopK implements IMqttMessageListener {
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
     /*params = [topic, id, k] */
+    //TODO Em vez de receber o k no tópico, receber no corpo da mensagem
     final String[] params = topic.split("/");
 
     final int k = Integer.valueOf(params[2]);
