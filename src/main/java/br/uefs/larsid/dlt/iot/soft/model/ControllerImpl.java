@@ -82,15 +82,6 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Atualiza os valores dos sensores.
-   */
-  public void updateValuesSensors() {
-    for (Device d : this.devices) {
-      d.getLastValueSensors();
-    }
-  }
-
-  /**
    * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
    */
   @Override
@@ -131,8 +122,6 @@ public class ControllerImpl implements Controller {
 
         device.setSensors(tempSensors);
       }
-    } catch (ServiceUnavailableException e) {
-      e.printStackTrace();
     } catch (JsonParseException e) {
       e.printStackTrace();
       System.out.println(
