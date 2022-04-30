@@ -356,7 +356,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Assim autaliza a quantidade de respostas.
+   * Atualiza a quantidade de respostas.
    *
    * @param id String - Id da requisição.
    */
@@ -376,6 +376,11 @@ public class ControllerImpl implements Controller {
     responseQueue.remove(id);
   }
 
+  /**
+   * Envia um mapa vazio.
+   *
+   * @param topicId String - Id da requisição.
+   */
   @Override
   public void sendEmptyTopK(String topicId) {
     byte[] payload = new LinkedHashMap<String, Map<String, Integer>>()
@@ -391,6 +396,12 @@ public class ControllerImpl implements Controller {
     }
   }
 
+  /**
+   * Retorna a quantidade de nós conectados.
+   *
+   * @return String
+   */
+  @Override
   public String getNodes() {
     return nodes;
   }
