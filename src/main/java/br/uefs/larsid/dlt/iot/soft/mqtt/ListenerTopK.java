@@ -26,20 +26,19 @@ public class ListenerTopK implements IMqttMessageListener {
    * Método construtor.
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
-   * @param MQTTClientUp MQTTClient - Cliente MQTT do gateway superior.
+   * @param MQTTClientUp   MQTTClient - Cliente MQTT do gateway superior.
    * @param MQTTClientDown MQTTClient - Cliente MQTT do gateway inferior.
-   * @param topic String - Tópico que será ouvido
-   * @param qos int - Qualidade de serviço do tópico que será ouvido.
+   * @param topic          String - Tópico que será ouvido
+   * @param qos            int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public ListenerTopK(
-    Controller controllerImpl,
-    MQTTClient MQTTClientUp,
-    MQTTClient MQTTClientDown,
-    String topic,
-    int qos,
-    boolean debugModeValue
-  ) {
+      Controller controllerImpl,
+      MQTTClient MQTTClientUp,
+      MQTTClient MQTTClientDown,
+      String topic,
+      int qos,
+      boolean debugModeValue) {
     this.MQTTClientUp = MQTTClientUp;
     this.MQTTClientDown = MQTTClientDown;
     this.controllerImpl = controllerImpl;
@@ -51,12 +50,11 @@ public class ListenerTopK implements IMqttMessageListener {
 
   @Override
   public void messageArrived(String topic, MqttMessage message)
-    throws Exception {
-    /*params = [topic, id, k] */
-    //TODO Em vez de receber o k no tópico, receber no corpo da mensagem
+      throws Exception {
+    /* params = [topic, id] */
     final String[] params = topic.split("/");
 
-    final int k = Integer.valueOf(params[2]);
+    final int k = Integer.valueOf(new String(message.getPayload()));
 
     printlnDebug("Request received: " + topic);
 
@@ -74,16 +72,15 @@ public class ListenerTopK implements IMqttMessageListener {
             /* Criando uma nova chave, no mapa de requisições */
             this.controllerImpl.addReponse(params[1]);
 
-            byte[] messageEmpty = "".getBytes();
+            byte[] messageDown = message.getPayload();
 
             String topicDown = String.format(
-              "%s/%s/%d",
-              TOP_K_FOG,
-              params[1],
-              k
+                "%s/%s",
+                TOP_K_FOG,
+                params[1]
             );
 
-            MQTTClientDown.publish(topicDown, messageEmpty, QOS);
+            MQTTClientDown.publish(topicDown, messageDown, QOS);
 
             Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
 
@@ -97,8 +94,10 @@ public class ListenerTopK implements IMqttMessageListener {
 
             Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
-            /* Consumindo apiIot para pegar os valores mais atualizados dos 
-            dispositivos. */
+            /*
+             * Consumindo API Iot para resgatar os valores mais atualizados dos
+             * dispositivos.
+             */
             this.controllerImpl.loadConnectedDevices();
 
             if (this.controllerImpl.getDevices().isEmpty()) {
@@ -110,21 +109,21 @@ public class ListenerTopK implements IMqttMessageListener {
             } else {
               scores = this.controllerImpl.calculateScores();
 
-              /* Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e 
-              atribuindo-o à carga de mensagem do MQTT */
-              Map<String, Integer> topK =
-                this.controllerImpl.sortTopK(scores, k);
+              /*
+               * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+               * atribuindo-o à carga de mensagem do MQTT
+               */
+              Map<String, Integer> topK = this.controllerImpl.sortTopK(scores, k);
 
               if (k > scores.size()) {
                 printlnDebug("Invalid Top-K!");
 
                 byte[] payload = String
-                  .format(
-                    "Can't possible calculate the Top-%s, sending the Top-%s!",
-                    k,
-                    scores.size()
-                  )
-                  .getBytes();
+                    .format(
+                        "Can't possible calculate the Top-%s, sending the Top-%s!",
+                        k,
+                        scores.size())
+                    .getBytes();
 
                 MQTTClientUp.publish(INVALID_TOP_K + params[1], payload, 1);
               }
