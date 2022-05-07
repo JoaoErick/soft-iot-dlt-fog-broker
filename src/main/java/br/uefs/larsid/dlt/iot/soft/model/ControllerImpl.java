@@ -351,7 +351,7 @@ public class ControllerImpl implements Controller {
    * @param id String - Id da requisição.
    */
   @Override
-  public void addReponse(String id) {
+  public void addResponse(String id) {
     responseQueue.put(id, 0);
   }
 

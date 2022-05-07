@@ -70,7 +70,7 @@ public class ListenerTopK implements IMqttMessageListener {
           if (this.amountNodes > 0) {
             printlnDebug("==== Cloud gateway -> Fog gateway  ====");
             /* Criando uma nova chave, no mapa de requisições */
-            this.controllerImpl.addReponse(params[1]);
+            this.controllerImpl.addResponse(params[1]);
 
             byte[] messageDown = message.getPayload();
 

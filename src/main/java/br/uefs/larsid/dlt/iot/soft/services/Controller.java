@@ -112,7 +112,7 @@ public interface Controller {
    *
    * @param id String - Id da requisição.
    */
-  void addReponse(String key);
+  void addResponse(String key);
 
   /**
    * Atualiza a quantidade de respostas.
