@@ -57,7 +57,7 @@ public class Listener implements IMqttMessageListener {
 
           /* Adicionando o mapa de scores recebido no mapa geral, levando em 
           consideração o id da requisição. */
-          fogMap.putAll(controllerImpl.convertStrigToMap(messageContent));
+          fogMap.putAll(controllerImpl.convertStringToMap(messageContent));
           controllerImpl.putScores(params[1], fogMap);
 
           printlnDebug(

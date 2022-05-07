@@ -67,7 +67,7 @@ public interface Controller {
    * @param mapAsString String - String que deseja converter.
    * @return Map
    */
-  Map<String, Integer> convertStrigToMap(String mapAsString);
+  Map<String, Integer> convertStringToMap(String mapAsString);
 
   /**
    * Envia um mapa vazio.

@@ -311,7 +311,7 @@ public class ControllerImpl implements Controller {
    * @return Map
    */
   @Override
-  public Map<String, Integer> convertStrigToMap(String mapAsString) {
+  public Map<String, Integer> convertStringToMap(String mapAsString) {
     return Arrays
       .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
       .map(entry -> entry.split("="))

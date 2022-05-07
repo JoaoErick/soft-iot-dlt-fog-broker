@@ -20,7 +20,7 @@ public class Device {
    * @param sensorId String - Id do sensor.
    * @return Sensor
    */
-  public Sensor getSensorbySensorId(String sensorId) {
+  public Sensor getSensorBySensorId(String sensorId) {
     for (Sensor sensor : sensors) {
       if (sensor.getId().contentEquals(sensorId)) return sensor;
     }
