@@ -1,8 +1,10 @@
 package br.uefs.larsid.dlt.iot.soft.model;
 
+import br.uefs.larsid.dlt.iot.soft.config.Config;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnect;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
@@ -30,17 +32,20 @@ public class ControllerImpl implements Controller {
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
+  private static final String CONN = "CONN";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
+  private boolean hasNodes;
   private MQTTClient MQTTClientUp;
   private MQTTClient MQTTClientHost;
-  private MQTTClient MQTTClientDown;
-  private String nodes;
+  // private MQTTClient MQTTClientDown;
+  private int nodes = 0;
   private String urlAPI;
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
+  private List<String> nodesIps;
 
   public ControllerImpl() {}
 
@@ -50,17 +55,25 @@ public class ControllerImpl implements Controller {
   public void start() {
     this.MQTTClientUp.connect();
     this.MQTTClientHost.connect();
-    this.MQTTClientDown.connect();
+    // this.MQTTClientDown.connect();
 
-    if (Integer.parseInt(this.nodes) > 0) {
+    if (hasNodes) {
+      this.nodesIps = new ArrayList<>();
+
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+      new ListenerConnect(this, MQTTClientHost, CONN, QOS, debugModeValue);
+    } else {
+      Config config = new Config();
+      byte[] payload = config.getProperty("ip").getBytes();
+
+      this.MQTTClientHost.publish(CONN, payload, QOS);
     }
 
     new ListenerTopK(
       this,
       MQTTClientUp,
-      MQTTClientDown,
+      this.nodesIps,
       TOP_K,
       QOS,
       debugModeValue
@@ -77,7 +90,7 @@ public class ControllerImpl implements Controller {
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
-    this.MQTTClientDown.disconnect();
+    // this.MQTTClientDown.disconnect();
   }
 
   /**
@@ -172,7 +185,7 @@ public class ControllerImpl implements Controller {
 
     /* Enquanto a quantidade de respostas da requisição for menor que o número 
     de nós filhos */
-    while (this.responseQueue.get(id) < Integer.parseInt(this.nodes)) {}
+    while (this.responseQueue.get(id) < this.nodes) {}
 
     /* Consumindo apiIot para pegar os valores mais atualizados dos 
     dispositivos. */
@@ -390,6 +403,52 @@ public class ControllerImpl implements Controller {
     this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
 
+  /**
+   * Adiciona um IP na lista de IPs.
+   *
+   * @param ip String - Ip que deseja adicionar.
+   */
+  @Override
+  public void addNodeIp(String ip) {
+    this.nodesIps.add(ip);
+    /* Alterando a quantidade de nós filhos */
+    this.nodes++;
+  }
+
+  /**
+   * Remove um IP na lista de IPs.
+   *
+   * @param ip String - Ip que deseja remover.
+   */
+  @Override
+  public void removeNodeIp(String ip) {
+    int pos = this.findNodeIp(ip);
+
+    if (pos != -1) {
+      this.nodesIps.remove(pos);
+      /* Alterando a quantidade de nós filhos */
+      this.nodes--;
+    } else {
+      printlnDebug("Error, the desired node was not found.");
+    }
+  }
+
+  /**
+   * Retorna a posição de um IP na lista de IPs
+   *
+   * @param ip String - Ip que deseja a posição.
+   * @return int
+   */
+  private int findNodeIp(String ip) {
+    for (int pos = 0; pos < this.nodesIps.size(); pos++) {
+      if (this.nodesIps.get(pos).equals(ip)) {
+        return pos;
+      }
+    }
+
+    return -1;
+  }
+
   private void printlnDebug(String str) {
     if (debugModeValue) {
       System.out.println(str);
@@ -402,11 +461,11 @@ public class ControllerImpl implements Controller {
    * @return String
    */
   @Override
-  public String getNodes() {
+  public int getNodes() {
     return nodes;
   }
 
-  public void setNodes(String nodes) {
+  public void setNodes(int nodes) {
     this.nodes = nodes;
   }
 
@@ -454,11 +513,27 @@ public class ControllerImpl implements Controller {
     this.devices = devices;
   }
 
-  public MQTTClient getMQTTClientDown() {
-    return MQTTClientDown;
+  // public MQTTClient getMQTTClientDown() {
+  //   return MQTTClientDown;
+  // }
+
+  // public void setMQTTClientDown(MQTTClient mQTTClientDown) {
+  //   MQTTClientDown = mQTTClientDown;
+  // }
+
+  public List<String> getNodesIps() {
+    return nodesIps;
   }
 
-  public void setMQTTClientDown(MQTTClient mQTTClientDown) {
-    MQTTClientDown = mQTTClientDown;
+  public void setNodesIps(List<String> nodesIps) {
+    this.nodesIps = nodesIps;
+  }
+
+  public boolean isHasNodes() {
+    return hasNodes;
+  }
+
+  public void setHasNodes(boolean hasNodes) {
+    this.hasNodes = hasNodes;
   }
 }
