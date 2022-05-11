@@ -98,7 +98,7 @@ public interface Controller {
    *
    * @return String
    */
-  String getNodes();
+  int getNodes();
 
   /**
    * Retorna a quantidade de nós conectados.
@@ -132,4 +132,18 @@ public interface Controller {
    * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
    */
   void loadConnectedDevices();
+
+  /**
+   * Adiciona um IP na lista de IPs.
+   *
+   * @param ip String - Ip que deseja adicionar.
+   */
+  public void addNodeIp(String ip);
+
+  /**
+   * Remove um IP na lista de IPs.
+   *
+   * @param ip String - Ip que deseja remover.
+   */
+  public void removeNodeIp(String ip);
 }
