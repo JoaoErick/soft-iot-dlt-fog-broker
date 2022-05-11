@@ -24,23 +24,23 @@
         <property name="password" value="${pass}" />
     </bean>
 
-    <bean id="MQTTClientDown" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
+    <!-- <bean id="MQTTClientDown" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip_down}" />
         <property name="port" value="${port}" />
         <property name="userName" value="${user}" />
         <property name="password" value="${pass}" />
-    </bean>
+    </bean> -->
 
     <bean id="controllerImpl" class="br.uefs.larsid.dlt.iot.soft.model.ControllerImpl"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="MQTTClientUp" ref="MQTTClientUp" />
         <property name="MQTTClientHost" ref="MQTTClientHost" />
-        <property name="MQTTClientDown" ref="MQTTClientDown" />
+        <!-- <property name="MQTTClientDown" ref="MQTTClientDown" /> -->
         <property name="urlAPI" value="${urlAPI}" />
-        <property name="nodes" value="${nodes}" />
+        <property name="hasNodes" value="${hasNodes}" />
     </bean>
 
   <cm:property-placeholder
@@ -49,13 +49,13 @@
 		<cm:default-properties>
 			<cm:property name="ip_up" value="localhost" />
 			<cm:property name="ip" value="localhost" />
-			<cm:property name="ip_down" value="localhost" />
+			<!-- <cm:property name="ip_down" value="localhost" /> -->
 			<cm:property name="port" value="1883" />
 			<cm:property name="user" value="karaf" />
 			<cm:property name="pass" value="karaf" />
 			<cm:property name="urlAPI" value="http://localhost:8181/cxf/iot-service/devices" />
 			<cm:property name="debugModeValue" value="true" />
-			<cm:property name="nodes" value="1" />
+			<cm:property name="hasNodes" value="true" />
 		</cm:default-properties>
 	</cm:property-placeholder>
 
