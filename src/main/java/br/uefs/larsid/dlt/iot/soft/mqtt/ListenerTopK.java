@@ -1,8 +1,11 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
+import br.uefs.larsid.dlt.iot.soft.config.Config;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -18,7 +21,8 @@ public class ListenerTopK implements IMqttMessageListener {
 
   private boolean debugModeValue;
   private MQTTClient MQTTClientUp;
-  private MQTTClient MQTTClientDown;
+  // private MQTTClient MQTTClientDown;
+  private List<String> nodesIps;
   private Controller controllerImpl;
   private final int amountNodes;
 
@@ -33,24 +37,27 @@ public class ListenerTopK implements IMqttMessageListener {
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public ListenerTopK(
-      Controller controllerImpl,
-      MQTTClient MQTTClientUp,
-      MQTTClient MQTTClientDown,
-      String topic,
-      int qos,
-      boolean debugModeValue) {
+    Controller controllerImpl,
+    MQTTClient MQTTClientUp,
+    // MQTTClient MQTTClientDown,
+    List<String> nodesIps,
+    String topic,
+    int qos,
+    boolean debugModeValue
+  ) {
     this.MQTTClientUp = MQTTClientUp;
-    this.MQTTClientDown = MQTTClientDown;
+    // this.MQTTClientDown = MQTTClientDown;
+    this.nodesIps = nodesIps;
     this.controllerImpl = controllerImpl;
     this.debugModeValue = debugModeValue;
-    this.amountNodes = Integer.parseInt(controllerImpl.getNodes());
+    this.amountNodes = controllerImpl.getNodes();
 
     this.MQTTClientUp.subscribe(qos, this, topic);
   }
 
   @Override
   public void messageArrived(String topic, MqttMessage message)
-      throws Exception {
+    throws Exception {
     /* params = [topic, id] */
     final String[] params = topic.split("/");
 
@@ -74,13 +81,9 @@ public class ListenerTopK implements IMqttMessageListener {
 
             byte[] messageDown = message.getPayload();
 
-            String topicDown = String.format(
-                "%s/%s",
-                TOP_K_FOG,
-                params[1]
-            );
+            String topicDown = String.format("%s/%s", TOP_K_FOG, params[1]);
 
-            MQTTClientDown.publish(topicDown, messageDown, QOS);
+            this.publishToDown(topicDown, messageDown);
 
             Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
 
@@ -113,17 +116,19 @@ public class ListenerTopK implements IMqttMessageListener {
                * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
                * atribuindo-o à carga de mensagem do MQTT
                */
-              Map<String, Integer> topK = this.controllerImpl.sortTopK(scores, k);
+              Map<String, Integer> topK =
+                this.controllerImpl.sortTopK(scores, k);
 
               if (k > scores.size()) {
                 printlnDebug("Invalid Top-K!");
 
                 byte[] payload = String
-                    .format(
-                        "Can't possible calculate the Top-%s, sending the Top-%s!",
-                        k,
-                        scores.size())
-                    .getBytes();
+                  .format(
+                    "Can't possible calculate the Top-%s, sending the Top-%s!",
+                    k,
+                    scores.size()
+                  )
+                  .getBytes();
 
                 MQTTClientUp.publish(INVALID_TOP_K + params[1], payload, 1);
               }
@@ -139,6 +144,37 @@ public class ListenerTopK implements IMqttMessageListener {
 
           break;
       }
+    }
+  }
+
+  /**
+   * Publica a requisição de Top-K para os nós filhos.
+   *
+   * @param topicDown String - Tópico.
+   * @param messageDown byte[] - Mensagem que será enviada.
+   */
+  private void publishToDown(String topicDown, byte[] messageDown) {
+    Config configFile = new Config();
+
+    boolean debugModeValue = Boolean.parseBoolean(
+      configFile.getProperty("debugModeValue")
+    );
+    String port = configFile.getProperty("port");
+    String user = configFile.getProperty("user");
+    String password = configFile.getProperty("pass");
+
+    for (String nodeIp : this.nodesIps) {
+      MQTTClient MQTTClientDown = new MQTTClient(
+        debugModeValue,
+        nodeIp,
+        port,
+        user,
+        password
+      );
+
+      MQTTClientDown.connect();
+      MQTTClientDown.publish(topicDown, messageDown, QOS);
+      MQTTClientDown.disconnect();
     }
   }
 
