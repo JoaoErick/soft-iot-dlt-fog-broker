@@ -21,7 +21,6 @@ user | Usuário para conexão com o *Broker* | karaf
 pass | Senha para conexão com o *Broker* | karaf
 urlAPI | URL da API onde estão os dispositivos | http://localhost:8181/cxf/iot-service/devices
 debugModeValue | Modo depuração | true
-nodes² | Quantidade de filhos na camada abaixo | 1
+hasNodes | Se o bundle irá possuir filhos | true
 
 ###### Obs¹: Caso o *Bundle* esteja sendo executado na camada mais baixa (`nodes=0`), a configuração pode ser mantida como: `ip_down=localhost`;
-###### Obs²: Quantidade de `soft-iot-dlt-fog-broker` conectados com o `soft-iot-dlt-fog-broker` da camada superior.
