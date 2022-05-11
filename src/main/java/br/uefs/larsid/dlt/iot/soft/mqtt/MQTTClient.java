@@ -28,6 +28,20 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
   public MQTTClient() {}
 
+  public MQTTClient(
+    boolean debugModeValue,
+    String ip,
+    String port,
+    String userName,
+    String password
+  ) {
+    this.debugModeValue = debugModeValue;
+    this.ip = ip;
+    this.port = port;
+    this.userName = userName;
+    this.password = password;
+  }
+
   /**
    * Inicializa o bundle.
    */
