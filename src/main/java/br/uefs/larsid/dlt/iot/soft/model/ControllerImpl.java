@@ -1,6 +1,5 @@
 package br.uefs.larsid.dlt.iot.soft.model;
 
-import br.uefs.larsid.dlt.iot.soft.config.Config;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
@@ -64,10 +63,9 @@ public class ControllerImpl implements Controller {
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
       new ListenerConnect(this, MQTTClientHost, CONN, QOS, debugModeValue);
     } else {
-      Config config = new Config();
-      byte[] payload = config.getProperty("ip").getBytes();
+      byte[] payload = MQTTClientHost.getIp().getBytes();
 
-      this.MQTTClientHost.publish(CONN, payload, QOS);
+      this.MQTTClientUp.publish(CONN, payload, QOS);
     }
 
     new ListenerTopK(
@@ -413,6 +411,8 @@ public class ControllerImpl implements Controller {
     this.nodesIps.add(ip);
     /* Alterando a quantidade de nós filhos */
     this.nodes++;
+    
+    //TODO: Se o ip já estiver na lista, não adicionar novamente.
   }
 
   /**

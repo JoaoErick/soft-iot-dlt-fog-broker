@@ -1,11 +1,9 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
-import br.uefs.larsid.dlt.iot.soft.config.Config;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -154,18 +152,13 @@ public class ListenerTopK implements IMqttMessageListener {
    * @param messageDown byte[] - Mensagem que será enviada.
    */
   private void publishToDown(String topicDown, byte[] messageDown) {
-    Config configFile = new Config();
-
-    boolean debugModeValue = Boolean.parseBoolean(
-      configFile.getProperty("debugModeValue")
-    );
-    String port = configFile.getProperty("port");
-    String user = configFile.getProperty("user");
-    String password = configFile.getProperty("pass");
+    String port = this.MQTTClientUp.getPort();
+    String user = this.MQTTClientUp.getUserName();
+    String password = this.MQTTClientUp.getPassword();
 
     for (String nodeIp : this.nodesIps) {
       MQTTClient MQTTClientDown = new MQTTClient(
-        debugModeValue,
+        this.debugModeValue,
         nodeIp,
         port,
         user,
@@ -174,7 +167,7 @@ public class ListenerTopK implements IMqttMessageListener {
 
       MQTTClientDown.connect();
       MQTTClientDown.publish(topicDown, messageDown, QOS);
-      MQTTClientDown.disconnect();
+      // MQTTClientDown.disconnect();
     }
   }
 
