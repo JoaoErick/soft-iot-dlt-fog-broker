@@ -14,8 +14,10 @@ import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
+  /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
   private static final String CONNECTED = "CONNECTED/1/1";
+  /*--------------------------------------------------------------------------*/
 
   private String ip;
   private String port;
@@ -40,13 +42,16 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
     this.port = port;
     this.userName = userName;
     this.password = password;
+
+    this.start();
   }
 
   /**
-   * Inicializa o bundle.
+   * Inicializa o client MQTT.
    */
   public void start() {
-    printlnDebug("Starting SOFT-IoT-Fog-Broker bundle...");
+    printlnDebug("Starting MQTTClient...");
+    
     this.serverURI = String.format("tcp://%s:%s", this.ip, this.port);
 
     this.mqttOptions = new MqttConnectOptions();
@@ -61,10 +66,10 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   }
 
   /**
-   * Finaliza o bundle.
+   * Finaliza o client MQTT.
    */
   public void stop() {
-    printlnDebug("Finishing SOFT-IoT-Fog-Broker bundle...");
+    printlnDebug("Finishing MQTTClient....");
   }
 
   /**
