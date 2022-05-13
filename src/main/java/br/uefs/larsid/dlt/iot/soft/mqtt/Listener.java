@@ -61,7 +61,7 @@ public class Listener implements IMqttMessageListener {
           controllerImpl.putScores(params[1], fogMap);
 
           printlnDebug(
-            "Top-K response received: " +
+            "Top-K response received and add to the map: " +
             controllerImpl.getMapById(params[1]).toString()
           );
 
@@ -74,7 +74,7 @@ public class Listener implements IMqttMessageListener {
 
         break;
       case INVALID_TOP_K:
-        printlnDebug("Invalid Top-K!");
+        printlnDebug("Invalid Top-K! - " + messageContent);
         break;
     }
   }
