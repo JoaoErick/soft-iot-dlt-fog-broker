@@ -38,8 +38,6 @@ public class ControllerImpl implements Controller {
   private boolean hasNodes;
   private MQTTClient MQTTClientUp;
   private MQTTClient MQTTClientHost;
-  // private MQTTClient MQTTClientDown;
-  private int nodes = 0;
   private String urlAPI;
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
@@ -54,7 +52,6 @@ public class ControllerImpl implements Controller {
   public void start() {
     this.MQTTClientUp.connect();
     this.MQTTClientHost.connect();
-    // this.MQTTClientDown.connect();
 
     if (hasNodes) {
       this.nodesIps = new ArrayList<>();
@@ -88,7 +85,6 @@ public class ControllerImpl implements Controller {
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
-    // this.MQTTClientDown.disconnect();
   }
 
   /**
@@ -183,7 +179,7 @@ public class ControllerImpl implements Controller {
 
     /* Enquanto a quantidade de respostas da requisição for menor que o número 
     de nós filhos */
-    while (this.responseQueue.get(id) < this.nodes) {}
+    while (this.responseQueue.get(id) < this.nodesIps.size()) {}
 
     /* Consumindo apiIot para pegar os valores mais atualizados dos 
     dispositivos. */
@@ -408,11 +404,9 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public void addNodeIp(String ip) {
-    this.nodesIps.add(ip);
-    /* Alterando a quantidade de nós filhos */
-    this.nodes++;
-
-    //TODO: Se o ip já estiver na lista, não adicionar novamente.
+    if (!this.nodesIps.contains(ip)) {
+      this.nodesIps.add(ip);
+    }
   }
 
   /**
@@ -426,8 +420,6 @@ public class ControllerImpl implements Controller {
 
     if (pos != -1) {
       this.nodesIps.remove(pos);
-      /* Alterando a quantidade de nós filhos */
-      this.nodes--;
     } else {
       printlnDebug("Error, the desired node was not found.");
     }
@@ -449,10 +441,14 @@ public class ControllerImpl implements Controller {
     return -1;
   }
 
-  private void printlnDebug(String str) {
-    if (debugModeValue) {
-      System.out.println(str);
-    }
+  /**
+   * Retorna a lista de IPs dos nós conectados.
+   *
+   * @return List
+   */
+  @Override
+  public List<String> getNodeIpList() {
+    return this.nodesIps;
   }
 
   /**
@@ -462,11 +458,13 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public int getNodes() {
-    return this.nodes;
+    return this.nodesIps.size();
   }
 
-  public void setNodes(int nodes) {
-    this.nodes = nodes;
+  private void printlnDebug(String str) {
+    if (debugModeValue) {
+      System.out.println(str);
+    }
   }
 
   public boolean isDebugModeValue() {
@@ -513,14 +511,6 @@ public class ControllerImpl implements Controller {
     this.devices = devices;
   }
 
-  // public MQTTClient getMQTTClientDown() {
-  //   return MQTTClientDown;
-  // }
-
-  // public void setMQTTClientDown(MQTTClient mQTTClientDown) {
-  //   MQTTClientDown = mQTTClientDown;
-  // }
-
   public List<String> getNodesIps() {
     return nodesIps;
   }
@@ -529,7 +519,13 @@ public class ControllerImpl implements Controller {
     this.nodesIps = nodesIps;
   }
 
-  public boolean isHasNodes() {
+  /**
+   * Verifica se o gateway possui filhos.
+   *
+   * @return boolean
+   */
+  @Override
+  public boolean hasNodes() {
     return hasNodes;
   }
 

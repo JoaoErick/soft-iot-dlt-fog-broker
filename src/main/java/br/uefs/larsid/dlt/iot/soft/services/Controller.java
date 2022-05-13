@@ -146,4 +146,18 @@ public interface Controller {
    * @param ip String - Ip que deseja remover.
    */
   public void removeNodeIp(String ip);
+
+  /**
+   * Verifica se o gateway possui filhos.
+   *
+   * @return boolean
+   */
+  public boolean hasNodes();
+
+  /**
+   * Retorna a lista de IPs dos nós conectados.
+   *
+   * @return List
+   */
+  public List<String> getNodeIpList();
 }
