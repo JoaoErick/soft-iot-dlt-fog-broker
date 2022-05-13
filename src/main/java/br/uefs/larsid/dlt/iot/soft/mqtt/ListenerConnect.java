@@ -49,11 +49,25 @@ public class ListenerConnect implements IMqttMessageListener {
     switch (params[0]) {
       case CONN:
         this.controllerImpl.addNodeIp(ipDown);
-        
-        printlnDebug(String.format("IP: %s added in the nodesIps list.", ipDown));
-        
+
+        printlnDebug(
+          String.format("IP: %s added in the nodesIps list.", ipDown)
+        );
+        showNodesConnected();
+
         break;
     }
+  }
+
+  /**
+   * Exibe o IP dos nós que estão conectados.
+   */
+  private void showNodesConnected() {
+    printlnDebug("+---- Nodes Ip Connected ----+");
+    for (String nodeIp : this.controllerImpl.getNodeIpList()) {
+      printlnDebug("\t  " + nodeIp);
+    }
+    printlnDebug("+----------------------------+");
   }
 
   private void printlnDebug(String str) {
