@@ -19,7 +19,6 @@ public class ListenerTopK implements IMqttMessageListener {
 
   private boolean debugModeValue;
   private MQTTClient MQTTClientUp;
-  // private MQTTClient MQTTClientDown;
   private List<String> nodesIps;
   private Controller controllerImpl;
 
@@ -28,7 +27,6 @@ public class ListenerTopK implements IMqttMessageListener {
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientUp   MQTTClient - Cliente MQTT do gateway superior.
-   * @param MQTTClientDown MQTTClient - Cliente MQTT do gateway inferior.
    * @param topic          String - Tópico que será ouvido
    * @param qos            int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
@@ -36,14 +34,12 @@ public class ListenerTopK implements IMqttMessageListener {
   public ListenerTopK(
     Controller controllerImpl,
     MQTTClient MQTTClientUp,
-    // MQTTClient MQTTClientDown,
     List<String> nodesIps,
     String topic,
     int qos,
     boolean debugModeValue
   ) {
     this.MQTTClientUp = MQTTClientUp;
-    // this.MQTTClientDown = MQTTClientDown;
     this.nodesIps = nodesIps;
     this.controllerImpl = controllerImpl;
     this.debugModeValue = debugModeValue;
@@ -60,7 +56,7 @@ public class ListenerTopK implements IMqttMessageListener {
     final int k = Integer.valueOf(new String(message.getPayload()));
 
     if (k == 0) {
-      if (controllerImpl.getNodes() > 0) {
+      if (controllerImpl.hasNodes()) {
         printlnDebug("Top-K = 0");
 
         this.controllerImpl.sendEmptyTopK(params[1]);
@@ -68,7 +64,7 @@ public class ListenerTopK implements IMqttMessageListener {
     } else {
       switch (params[0]) {
         case TOP_K_FOG:
-          if (controllerImpl.getNodes() > 0) {
+          if (controllerImpl.hasNodes()) {
             printlnDebug("==== Cloud gateway -> Fog gateway  ====");
             /* Criando uma nova chave, no mapa de requisições */
             this.controllerImpl.addResponse(params[1]);
@@ -97,6 +93,9 @@ public class ListenerTopK implements IMqttMessageListener {
              */
             this.controllerImpl.loadConnectedDevices();
 
+            /**
+             * Se não houver nenhum dispositivo conectado.
+             */
             if (this.controllerImpl.getDevices().isEmpty()) {
               printlnDebug("Sorry, there are no devices connected.");
 
@@ -161,9 +160,11 @@ public class ListenerTopK implements IMqttMessageListener {
         password
       );
 
+      //TODO: Executar a conexão dentro de um try-catch, para quando o nó não estiver mais conectado.
+      //TODO: Se o nó não estiver conectado, removê-lo da lista.
       MQTTClientDown.connect();
       MQTTClientDown.publish(topicDown, messageDown, QOS);
-      // MQTTClientDown.disconnect();
+      MQTTClientDown.disconnect();
     }
   }
 
