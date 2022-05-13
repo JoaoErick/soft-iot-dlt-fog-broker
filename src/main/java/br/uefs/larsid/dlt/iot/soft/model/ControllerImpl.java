@@ -412,8 +412,6 @@ public class ControllerImpl implements Controller {
     /* Alterando a quantidade de nós filhos */
     this.nodes++;
 
-    System.out.println("Aqui" + this.getNodes());
-    
     //TODO: Se o ip já estiver na lista, não adicionar novamente.
   }
 
