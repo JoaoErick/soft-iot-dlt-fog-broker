@@ -22,7 +22,6 @@ public class ListenerTopK implements IMqttMessageListener {
   // private MQTTClient MQTTClientDown;
   private List<String> nodesIps;
   private Controller controllerImpl;
-  private final int amountNodes;
 
   /**
    * Método construtor.
@@ -48,7 +47,6 @@ public class ListenerTopK implements IMqttMessageListener {
     this.nodesIps = nodesIps;
     this.controllerImpl = controllerImpl;
     this.debugModeValue = debugModeValue;
-    this.amountNodes = controllerImpl.getNodes();
 
     this.MQTTClientUp.subscribe(qos, this, topic);
   }
@@ -61,10 +59,8 @@ public class ListenerTopK implements IMqttMessageListener {
 
     final int k = Integer.valueOf(new String(message.getPayload()));
 
-    printlnDebug("Request received: " + topic);
-
     if (k == 0) {
-      if (this.amountNodes > 0) {
+      if (controllerImpl.getNodes() > 0) {
         printlnDebug("Top-K = 0");
 
         this.controllerImpl.sendEmptyTopK(params[1]);
@@ -72,7 +68,7 @@ public class ListenerTopK implements IMqttMessageListener {
     } else {
       switch (params[0]) {
         case TOP_K_FOG:
-          if (this.amountNodes > 0) {
+          if (controllerImpl.getNodes() > 0) {
             printlnDebug("==== Cloud gateway -> Fog gateway  ====");
             /* Criando uma nova chave, no mapa de requisições */
             this.controllerImpl.addResponse(params[1]);
