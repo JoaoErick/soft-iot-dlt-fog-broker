@@ -411,6 +411,8 @@ public class ControllerImpl implements Controller {
     this.nodesIps.add(ip);
     /* Alterando a quantidade de nós filhos */
     this.nodes++;
+
+    System.out.println("Aqui" + this.getNodes());
     
     //TODO: Se o ip já estiver na lista, não adicionar novamente.
   }
@@ -462,7 +464,7 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public int getNodes() {
-    return nodes;
+    return this.nodes;
   }
 
   public void setNodes(int nodes) {
