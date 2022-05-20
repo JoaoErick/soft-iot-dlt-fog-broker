@@ -50,15 +50,13 @@ public class ListenerPing implements IMqttMessageListener {
     throws Exception {
     printlnDebug("==== Receive Ping/Pong Request ====");
 
-    /* Verificar qual o tópico recebido. */
+    /* Verifica qual o tópico recebido. */
     switch (topic) {
       case PING:
-        printlnDebug("PING RECEBIDO!");
         this.MQTTClientUp.publish(PONG, "".getBytes(), this.qos);
 
         break;
       case PONG:
-        printlnDebug("PONG RECEBIDO!");
 
         break;
     }
