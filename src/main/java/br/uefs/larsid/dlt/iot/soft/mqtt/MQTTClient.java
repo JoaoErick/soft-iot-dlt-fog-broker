@@ -230,7 +230,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
         );
       }
     } catch (MqttException ex) {
-      System.out.println("Erro to publish " + topic + " - " + ex);
+      System.out.println("Error to publish " + topic + " - " + ex);
     }
   }
 
