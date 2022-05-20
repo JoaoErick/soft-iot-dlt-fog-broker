@@ -41,33 +41,21 @@ public class ListenerConnect implements IMqttMessageListener {
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
     final String[] params = topic.split("/");
-    String ipDown = new String(message.getPayload());
+    String uriDown = new String(message.getPayload());
 
     printlnDebug("==== Receive Connect Request ====");
 
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
       case CONN:
-        this.controllerImpl.addNodeIp(ipDown);
+        this.controllerImpl.addNodeUri(uriDown);
 
         printlnDebug(
-          String.format("IP: %s added in the nodesIps list.", ipDown)
+          String.format("URI: %s added in the nodesIps list.", uriDown)
         );
-        showNodesConnected();
 
         break;
     }
-  }
-
-  /**
-   * Exibe o IP dos nós que estão conectados.
-   */
-  private void showNodesConnected() {
-    printlnDebug("+---- Nodes Ip Connected ----+");
-    for (String nodeIp : this.controllerImpl.getNodeIpList()) {
-      printlnDebug("\t  " + nodeIp);
-    }
-    printlnDebug("+----------------------------+");
   }
 
   private void printlnDebug(String str) {
