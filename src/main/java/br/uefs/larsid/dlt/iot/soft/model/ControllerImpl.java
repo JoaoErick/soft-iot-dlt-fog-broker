@@ -4,6 +4,7 @@ import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnect;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerPing;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
@@ -25,6 +26,7 @@ import org.json.JSONObject;
 public class ControllerImpl implements Controller {
 
   /*-------------------------Constantes---------------------------------------*/
+  private static final int PING_TIME = 5000;
   private static final int QOS = 1;
   private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
@@ -32,6 +34,8 @@ public class ControllerImpl implements Controller {
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
   private static final String CONN = "CONN";
+  private static final String PING = "PING";
+  private static final String PING_RES = "PING_RES";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -54,11 +58,56 @@ public class ControllerImpl implements Controller {
     this.MQTTClientHost.connect();
 
     if (hasNodes) {
-      this.nodesUris = new ArrayList<>();
+      nodesUris = new ArrayList<>();
 
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
       new ListenerConnect(this, MQTTClientHost, CONN, QOS, debugModeValue);
+
+      //TODO: Colocar thread em uma função
+      //TODO: Matar a thread quando finalizar o bundle
+      Thread thread = new Thread(
+        new Runnable() {
+          @Override
+          public void run() {
+            while (true) {
+              if (nodesUris.size() > 0) {
+                for (String nodeUri : nodesUris) {
+                  printlnDebug(nodeUri);
+                  String uri[] = nodeUri.split(":");
+
+                  String user = MQTTClientHost.getUserName();
+                  String password = MQTTClientHost.getPassword();
+
+                  MQTTClient MQTTClientDown = new MQTTClient(
+                    debugModeValue,
+                    uri[0],
+                    uri[1],
+                    user,
+                    password
+                  );
+
+                  MQTTClientDown.connect();
+                  MQTTClientDown.publish(PING, "".getBytes(), QOS);
+                  MQTTClientDown.disconnect();
+                }
+              }
+
+              try {
+                Thread.sleep(PING_TIME);
+              } catch (InterruptedException ie) {
+                printlnDebug("Thread ping finalizada de maneira inesperada!");
+                printlnDebug(ie.getMessage());
+              }
+            }
+          }
+        }
+      );
+
+      /* Finalizar a thread de eleição quando fechar o programa. */
+      thread.setDaemon(true);
+      /* Iniciar a thread de eleição. */
+      thread.start();
     } else {
       byte[] payload = String
         .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
@@ -66,6 +115,8 @@ public class ControllerImpl implements Controller {
 
       this.MQTTClientUp.publish(CONN, payload, QOS);
     }
+
+    new ListenerPing(this, MQTTClientHost, PING, QOS, debugModeValue);
 
     new ListenerTopK(
       this,
