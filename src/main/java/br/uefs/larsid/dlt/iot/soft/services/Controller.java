@@ -134,18 +134,18 @@ public interface Controller {
   void loadConnectedDevices();
 
   /**
-   * Adiciona um IP na lista de IPs.
+   * Adiciona um URI na lista de URIs.
    *
-   * @param ip String - Ip que deseja adicionar.
+   * @param uri String - URI que deseja adicionar.
    */
-  public void addNodeIp(String ip);
+  public void addNodeUri(String uri);
 
   /**
-   * Remove um IP na lista de IPs.
+   * Remove uma URI na lista de URIs.
    *
-   * @param ip String - Ip que deseja remover.
+   * @param uri String - URI que deseja remover.
    */
-  public void removeNodeIp(String ip);
+  public void removeNodeUri(String uri);
 
   /**
    * Verifica se o gateway possui filhos.
@@ -155,9 +155,14 @@ public interface Controller {
   public boolean hasNodes();
 
   /**
-   * Retorna a lista de IPs dos nós conectados.
+   * Retorna a lista de URIs dos nós conectados.
    *
    * @return List
    */
-  public List<String> getNodeIpList();
+  public List<String> getNodeUriList();
+
+  /**
+   * Exibe a URI dos nós que estão conectados.
+   */
+  public void showNodesConnected() ;
 }
