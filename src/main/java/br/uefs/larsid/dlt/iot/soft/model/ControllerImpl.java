@@ -42,7 +42,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
-  private List<String> nodesIps;
+  private List<String> nodesUris;
 
   public ControllerImpl() {}
 
@@ -54,13 +54,15 @@ public class ControllerImpl implements Controller {
     this.MQTTClientHost.connect();
 
     if (hasNodes) {
-      this.nodesIps = new ArrayList<>();
+      this.nodesUris = new ArrayList<>();
 
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
       new ListenerConnect(this, MQTTClientHost, CONN, QOS, debugModeValue);
     } else {
-      byte[] payload = MQTTClientHost.getIp().getBytes();
+      byte[] payload = String
+        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+        .getBytes();
 
       this.MQTTClientUp.publish(CONN, payload, QOS);
     }
@@ -68,7 +70,7 @@ public class ControllerImpl implements Controller {
     new ListenerTopK(
       this,
       MQTTClientUp,
-      this.nodesIps,
+      this.nodesUris,
       TOP_K,
       QOS,
       debugModeValue
@@ -179,7 +181,7 @@ public class ControllerImpl implements Controller {
 
     /* Enquanto a quantidade de respostas da requisição for menor que o número 
     de nós filhos */
-    while (this.responseQueue.get(id) < this.nodesIps.size()) {}
+    while (this.responseQueue.get(id) < this.nodesUris.size()) {}
 
     /* Consumindo apiIot para pegar os valores mais atualizados dos 
     dispositivos. */
@@ -398,42 +400,44 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Adiciona um IP na lista de IPs.
+   * Adiciona um URI na lista de URIs.
    *
-   * @param ip String - Ip que deseja adicionar.
+   * @param uri String - URI que deseja adicionar.
    */
   @Override
-  public void addNodeIp(String ip) {
-    if (!this.nodesIps.contains(ip)) {
-      this.nodesIps.add(ip);
+  public void addNodeUri(String uri) {
+    if (!this.nodesUris.contains(uri)) {
+      this.nodesUris.add(uri);
     }
+    this.showNodesConnected();
   }
 
   /**
-   * Remove um IP na lista de IPs.
+   * Remove uma URI na lista de URIs.
    *
-   * @param ip String - Ip que deseja remover.
+   * @param uri String - URI que deseja remover.
    */
   @Override
-  public void removeNodeIp(String ip) {
-    int pos = this.findNodeIp(ip);
+  public void removeNodeUri(String uri) {
+    int pos = this.findNodeUri(uri);
 
     if (pos != -1) {
-      this.nodesIps.remove(pos);
+      this.nodesUris.remove(pos);
     } else {
       printlnDebug("Error, the desired node was not found.");
     }
+    this.showNodesConnected();
   }
 
   /**
-   * Retorna a posição de um IP na lista de IPs
+   * Retorna a posição de um URI na lista de URIs
    *
-   * @param ip String - Ip que deseja a posição.
+   * @param uri String - URI que deseja a posição.
    * @return int
    */
-  private int findNodeIp(String ip) {
-    for (int pos = 0; pos < this.nodesIps.size(); pos++) {
-      if (this.nodesIps.get(pos).equals(ip)) {
+  private int findNodeUri(String uri) {
+    for (int pos = 0; pos < this.nodesUris.size(); pos++) {
+      if (this.nodesUris.get(pos).equals(uri)) {
         return pos;
       }
     }
@@ -442,13 +446,13 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   * Retorna a lista de IPs dos nós conectados.
+   * Retorna a lista de URIs dos nós conectados.
    *
    * @return List
    */
   @Override
-  public List<String> getNodeIpList() {
-    return this.nodesIps;
+  public List<String> getNodeUriList() {
+    return this.nodesUris;
   }
 
   /**
@@ -458,7 +462,18 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public int getNodes() {
-    return this.nodesIps.size();
+    return this.nodesUris.size();
+  }
+
+  /**
+   * Exibe a URI dos nós que estão conectados.
+   */
+  public void showNodesConnected() {
+    printlnDebug("+---- Nodes URI Connected ----+");
+    for (String nodeIp : this.getNodeUriList()) {
+      printlnDebug("     " + nodeIp);
+    }
+    printlnDebug("+----------------------------+");
   }
 
   private void printlnDebug(String str) {
@@ -511,12 +526,12 @@ public class ControllerImpl implements Controller {
     this.devices = devices;
   }
 
-  public List<String> getNodesIps() {
-    return nodesIps;
+  public List<String> getNodesUris() {
+    return nodesUris;
   }
 
-  public void setNodesIps(List<String> nodesIps) {
-    this.nodesIps = nodesIps;
+  public void setNodesUris(List<String> nodesUris) {
+    this.nodesUris = nodesUris;
   }
 
   /**
