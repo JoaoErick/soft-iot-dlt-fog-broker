@@ -10,7 +10,7 @@
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
         <property name="ip" value="${ip_up}" />
-        <property name="port" value="${port}" />
+        <property name="port" value="${port_up}" />
         <property name="userName" value="${user}" />
         <property name="password" value="${pass}" />
     </bean>
@@ -38,6 +38,7 @@
 		update-strategy="reload">
 		<cm:default-properties>
 			<cm:property name="ip_up" value="localhost" />
+            <cm:property name="port_up" value="1883" />
 			<cm:property name="ip" value="localhost" />
 			<cm:property name="port" value="1883" />
 			<cm:property name="user" value="karaf" />
