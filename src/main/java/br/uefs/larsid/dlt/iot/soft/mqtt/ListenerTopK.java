@@ -19,7 +19,7 @@ public class ListenerTopK implements IMqttMessageListener {
 
   private boolean debugModeValue;
   private MQTTClient MQTTClientUp;
-  private List<String> nodesIps;
+  private List<String> nodesUris;
   private Controller controllerImpl;
 
   /**
@@ -27,6 +27,7 @@ public class ListenerTopK implements IMqttMessageListener {
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientUp   MQTTClient - Cliente MQTT do gateway superior.
+   * @param nodesUris   List<String> - Lista de URIs.
    * @param topic          String - Tópico que será ouvido
    * @param qos            int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
@@ -34,13 +35,13 @@ public class ListenerTopK implements IMqttMessageListener {
   public ListenerTopK(
     Controller controllerImpl,
     MQTTClient MQTTClientUp,
-    List<String> nodesIps,
+    List<String> nodesUris,
     String topic,
     int qos,
     boolean debugModeValue
   ) {
     this.MQTTClientUp = MQTTClientUp;
-    this.nodesIps = nodesIps;
+    this.nodesUris = nodesUris;
     this.controllerImpl = controllerImpl;
     this.debugModeValue = debugModeValue;
 
@@ -147,15 +148,16 @@ public class ListenerTopK implements IMqttMessageListener {
    * @param messageDown byte[] - Mensagem que será enviada.
    */
   private void publishToDown(String topicDown, byte[] messageDown) {
-    String port = this.MQTTClientUp.getPort();
     String user = this.MQTTClientUp.getUserName();
     String password = this.MQTTClientUp.getPassword();
 
-    for (String nodeIp : this.nodesIps) {
+    for (String nodeUri : this.nodesUris) {
+      String uri[] = nodeUri.split(":");
+
       MQTTClient MQTTClientDown = new MQTTClient(
         this.debugModeValue,
-        nodeIp,
-        port,
+        uri[0],
+        uri[1],
         user,
         password
       );
