@@ -8,54 +8,57 @@ public class ListenerPing implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String PING = "PING";
-  private static final String PING_RES = "PING_RES";
+  private static final String PONG = "PONG";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
   private Controller controllerImpl;
-  private MQTTClient MQTTClient;
+  private MQTTClient MQTTClientHost;
+  private MQTTClient MQTTClientUp;
   private int qos;
 
   /**
    * Método Construtor.
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
-   * @param MQTTClient MQTTClient - Cliente MQTT do gateway superior.
+   * @param MQTTClient MQTTClientUp - Cliente MQTT do gateway superior.
+   * @param MQTTClient MQTTClientHost - Cliente MQTT do gateway onde o bundle 
+   está sendo executado.
    * @param topic String - Tópico que será ouvido
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public ListenerPing(
     Controller controllerImpl,
-    MQTTClient MQTTClient,
+    MQTTClient MQTTClientUp,
+    MQTTClient MQTTClientHost,
     String topic,
     int qos,
     boolean debugModeValue
   ) {
     this.controllerImpl = controllerImpl;
-    this.MQTTClient = MQTTClient;
+    this.MQTTClientUp = MQTTClientUp;
+    this.MQTTClientHost = MQTTClientHost;
     this.debugModeValue = debugModeValue;
     this.qos = qos;
 
-    //TODO: Receber tanto o MQTTClientHost quanto o MQTTClienUp
-
-    this.MQTTClient.subscribe(qos, this, topic);
+    this.MQTTClientHost.subscribe(qos, this, topic);
   }
 
   @Override
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
-    printlnDebug("==== Receive Ping Request ====");
+    printlnDebug("==== Receive Ping/Pong Request ====");
 
     /* Verificar qual o tópico recebido. */
     switch (topic) {
       case PING:
-      printlnDebug("PING RECEBIDO!");
-        this.MQTTClient.publish(PING_RES, "".getBytes(), this.qos);
+        printlnDebug("PING RECEBIDO!");
+        this.MQTTClientUp.publish(PONG, "".getBytes(), this.qos);
 
         break;
-      case PING_RES:
-        printlnDebug("RESPOSTA RECEBIDA COM SUCESSO!");
+      case PONG:
+        printlnDebug("PONG RECEBIDO!");
 
         break;
     }
