@@ -26,7 +26,6 @@ import org.json.JSONObject;
 public class ControllerImpl implements Controller {
 
   /*-------------------------Constantes---------------------------------------*/
-  private static final int PING_TIME = 5000;
   private static final int QOS = 1;
   private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
@@ -35,7 +34,7 @@ public class ControllerImpl implements Controller {
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
   private static final String CONN = "CONN";
   private static final String PING = "PING";
-  private static final String PING_RES = "PING_RES";
+  private static final String PONG = "PONG";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -47,8 +46,10 @@ public class ControllerImpl implements Controller {
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
+  private ThreadPing threadPing = null;
 
-  public ControllerImpl() {}
+  public ControllerImpl() {
+  }
 
   /**
    * Inicializa o bundle.
@@ -63,81 +64,52 @@ public class ControllerImpl implements Controller {
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
       new ListenerConnect(this, MQTTClientHost, CONN, QOS, debugModeValue);
+      new ListenerPing(this, MQTTClientUp, MQTTClientHost, PONG, QOS, debugModeValue);
 
-      //TODO: Colocar thread em uma função
-      //TODO: Matar a thread quando finalizar o bundle
-      Thread thread = new Thread(
-        new Runnable() {
-          @Override
-          public void run() {
-            while (true) {
-              if (nodesUris.size() > 0) {
-                for (String nodeUri : nodesUris) {
-                  printlnDebug(nodeUri);
-                  String uri[] = nodeUri.split(":");
+      this.threadPing = new ThreadPing(
+          this,
+          this.MQTTClientHost.getUserName(),
+          this.MQTTClientHost.getPassword(),
+          PING,
+          debugModeValue);
 
-                  String user = MQTTClientHost.getUserName();
-                  String password = MQTTClientHost.getPassword();
-
-                  MQTTClient MQTTClientDown = new MQTTClient(
-                    debugModeValue,
-                    uri[0],
-                    uri[1],
-                    user,
-                    password
-                  );
-
-                  MQTTClientDown.connect();
-                  MQTTClientDown.publish(PING, "".getBytes(), QOS);
-                  MQTTClientDown.disconnect();
-                }
-              }
-
-              try {
-                Thread.sleep(PING_TIME);
-              } catch (InterruptedException ie) {
-                printlnDebug("Thread ping finalizada de maneira inesperada!");
-                printlnDebug(ie.getMessage());
-              }
-            }
-          }
-        }
-      );
-
-      /* Finalizar a thread de eleição quando fechar o programa. */
-      thread.setDaemon(true);
-      /* Iniciar a thread de eleição. */
-      thread.start();
+      /**
+       * Thread para verificação de conexão com os gateways conectados.
+       */
+      this.threadPing.start();
     } else {
       byte[] payload = String
-        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
-        .getBytes();
+          .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+          .getBytes();
 
       this.MQTTClientUp.publish(CONN, payload, QOS);
+
+      new ListenerPing(this, MQTTClientUp, MQTTClientHost, PING, QOS, debugModeValue);
     }
 
-    new ListenerPing(this, MQTTClientHost, PING, QOS, debugModeValue);
-
     new ListenerTopK(
-      this,
-      MQTTClientUp,
-      this.nodesUris,
-      TOP_K,
-      QOS,
-      debugModeValue
-    );
+        this,
+        MQTTClientUp,
+        this.nodesUris,
+        TOP_K,
+        QOS,
+        debugModeValue);
   }
 
   /**
    * Finaliza o bundle.
    */
   public void stop() {
+    if (this.threadPing != null)
+      this.threadPing.stop();
+
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
     this.MQTTClientUp.unsubscribe(TOP_K);
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
+
   }
 
   /**
@@ -184,13 +156,11 @@ public class ControllerImpl implements Controller {
     } catch (JsonParseException e) {
       e.printStackTrace();
       System.out.println(
-        "Verify the correct format of 'DevicesConnected' property in configuration file."
-      );
+          "Verify the correct format of 'DevicesConnected' property in configuration file.");
     } catch (JsonMappingException e) {
       e.printStackTrace();
       System.out.println(
-        "Verify the correct format of 'DevicesConnected' property in configuration file."
-      );
+          "Verify the correct format of 'DevicesConnected' property in configuration file.");
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -224,18 +194,23 @@ public class ControllerImpl implements Controller {
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
-   * @param k int - Quantidade de scores requisitados.
+   * @param k  int - Quantidade de scores requisitados.
    */
   @Override
   public void publishTopK(String id, int k) {
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
 
-    /* Enquanto a quantidade de respostas da requisição for menor que o número 
-    de nós filhos */
-    while (this.responseQueue.get(id) < this.nodesUris.size()) {}
+    /*
+     * Enquanto a quantidade de respostas da requisição for menor que o número
+     * de nós filhos
+     */
+    while (this.responseQueue.get(id) < this.nodesUris.size()) {
+    }
 
-    /* Consumindo apiIot para pegar os valores mais atualizados dos 
-    dispositivos. */
+    /*
+     * Consumindo apiIot para pegar os valores mais atualizados dos
+     * dispositivos.
+     */
     this.loadConnectedDevices();
 
     if (!this.devices.isEmpty()) {
@@ -250,18 +225,18 @@ public class ControllerImpl implements Controller {
         this.sendInvalidTopKMessage(
             id,
             String.format(
-              "Can't possible calculate the Top-%s, sending the Top-%d!",
-              k,
-              topkMapSize
-            )
-          );
+                "Can't possible calculate the Top-%s, sending the Top-%d!",
+                k,
+                topkMapSize));
       }
     }
 
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
 
-    /* Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e 
-    atribuindo-o à carga de mensagem do MQTT */
+    /*
+     * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+     * atribuindo-o à carga de mensagem do MQTT
+     */
     Map<String, Integer> topK = sortTopK(this.getMapById(id), k);
 
     printlnDebug("Top-K Result => " + topK.toString());
@@ -279,40 +254,39 @@ public class ControllerImpl implements Controller {
    * Calcula o Top-K.
    *
    * @param devicesAndScoresMap Map - Mapa de Top-K
-   * @param k int - Quantidade de scores requisitados.
+   * @param k                   int - Quantidade de scores requisitados.
    * @return Map
    *
    */
   @Override
   public Map<String, Integer> sortTopK(
-    Map<String, Integer> devicesAndScoresMap,
-    int k
-  ) {
+      Map<String, Integer> devicesAndScoresMap,
+      int k) {
     Object[] temp = devicesAndScoresMap
-      .entrySet()
-      .stream()
-      .sorted(
-        Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
-      )
-      .toArray();
+        .entrySet()
+        .stream()
+        .sorted(
+            Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()))
+        .toArray();
 
     if (debugModeValue) {
       for (Object e : temp) {
         printlnDebug(
-          ((Map.Entry<String, Integer>) e).getKey() +
-          " : " +
-          ((Map.Entry<String, Integer>) e).getValue()
-        );
+            ((Map.Entry<String, Integer>) e).getKey() +
+                " : " +
+                ((Map.Entry<String, Integer>) e).getValue());
       }
     }
 
     Map<String, Integer> topK = new LinkedHashMap<String, Integer>();
 
-    /* Caso a quantidade de dispositivos conectados seja menor que a 
-    quantidade requisitada. */
+    /*
+     * Caso a quantidade de dispositivos conectados seja menor que a
+     * quantidade requisitada.
+     */
     int maxIteration = k <= devicesAndScoresMap.size()
-      ? k
-      : devicesAndScoresMap.size();
+        ? k
+        : devicesAndScoresMap.size();
 
     /* Pegando os k piores */
     for (int i = 0; i < maxIteration; i++) {
@@ -324,7 +298,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   *  Retorna o mapa de requisições do sistema, composto pelo
+   * Retorna o mapa de requisições do sistema, composto pelo
    * id da requisição (chave) e o mapa de scores (valor).
    * O mapa de scores é composto pelo nome do dispositivo (Chave)
    * e o score (valor) associado.
@@ -352,7 +326,7 @@ public class ControllerImpl implements Controller {
    * Adiciona um mapa de scores de uma nova requisição no mapa de
    * requisições na sua respectiva.
    *
-   * @param id String - Id da requisição.
+   * @param id     String - Id da requisição.
    * @param fogMap Map - Mapa de requisições.
    */
   @Override
@@ -373,11 +347,10 @@ public class ControllerImpl implements Controller {
   @Override
   public Map<String, Integer> convertStringToMap(String mapAsString) {
     return Arrays
-      .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
-      .map(entry -> entry.split("="))
-      .collect(
-        Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1]))
-      );
+        .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
+        .map(entry -> entry.split("="))
+        .collect(
+            Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1])));
   }
 
   /**
@@ -429,7 +402,7 @@ public class ControllerImpl implements Controller {
   /**
    * Remove uma resposta específica da fila de respostas.
    *
-   *@param id String - Id da requisição.
+   * @param id String - Id da requisição.
    */
   @Override
   public void removeSpecificResponse(String id) {
@@ -444,8 +417,8 @@ public class ControllerImpl implements Controller {
   @Override
   public void sendEmptyTopK(String topicId) {
     byte[] payload = new LinkedHashMap<String, Map<String, Integer>>()
-      .toString()
-      .getBytes();
+        .toString()
+        .getBytes();
 
     this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
