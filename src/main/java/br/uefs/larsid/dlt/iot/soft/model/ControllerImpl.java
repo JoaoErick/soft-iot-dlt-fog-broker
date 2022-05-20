@@ -3,8 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.model;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
-import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnect;
-import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerPing;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
@@ -32,9 +31,8 @@ public class ControllerImpl implements Controller {
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
-  private static final String CONN = "CONN";
-  private static final String PING = "PING";
-  private static final String PONG = "PONG";
+  private static final String CONNECT = "SYN";
+  private static final String DISCONNECT = "FIN";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -46,7 +44,6 @@ public class ControllerImpl implements Controller {
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
-  private ThreadPing threadPing = null;
 
   public ControllerImpl() {
   }
@@ -63,28 +60,14 @@ public class ControllerImpl implements Controller {
 
       new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
-      new ListenerConnect(this, MQTTClientHost, CONN, QOS, debugModeValue);
-      new ListenerPing(this, MQTTClientUp, MQTTClientHost, PONG, QOS, debugModeValue);
-
-      this.threadPing = new ThreadPing(
-          this,
-          this.MQTTClientHost.getUserName(),
-          this.MQTTClientHost.getPassword(),
-          PING,
-          debugModeValue);
-
-      /**
-       * Thread para verificação de conexão com os gateways conectados.
-       */
-      this.threadPing.start();
+      new ListenerConnection(this, MQTTClientHost, CONNECT, QOS, debugModeValue);
+      new ListenerConnection(this, MQTTClientHost, DISCONNECT, QOS, debugModeValue);
     } else {
       byte[] payload = String
           .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
           .getBytes();
 
-      this.MQTTClientUp.publish(CONN, payload, QOS);
-
-      new ListenerPing(this, MQTTClientUp, MQTTClientHost, PING, QOS, debugModeValue);
+      this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
 
     new ListenerTopK(
@@ -100,8 +83,13 @@ public class ControllerImpl implements Controller {
    * Finaliza o bundle.
    */
   public void stop() {
-    if (this.threadPing != null)
-      this.threadPing.stop();
+    if(!this.hasNodes) {
+      byte[] payload = String
+          .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+          .getBytes();
+
+      this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
+    }
 
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
@@ -496,6 +484,10 @@ public class ControllerImpl implements Controller {
     printlnDebug("+---- Nodes URI Connected ----+");
     for (String nodeIp : this.getNodeUriList()) {
       printlnDebug("     " + nodeIp);
+    }
+
+    if (this.getNodeUriList().size() == 0){
+      printlnDebug("        empty");
     }
     printlnDebug("+----------------------------+");
   }
