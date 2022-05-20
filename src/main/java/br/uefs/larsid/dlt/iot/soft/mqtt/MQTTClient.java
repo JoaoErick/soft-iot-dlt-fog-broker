@@ -59,7 +59,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
     this.mqttOptions.setConnectionTimeout(3);
     this.mqttOptions.setKeepAliveInterval(10);
     this.mqttOptions.setAutomaticReconnect(true);
-    this.mqttOptions.setCleanSession(false);
+    this.mqttOptions.setCleanSession(true);
 
     this.mqttOptions.setUserName(this.userName);
     this.mqttOptions.setPassword(this.password.toCharArray());
