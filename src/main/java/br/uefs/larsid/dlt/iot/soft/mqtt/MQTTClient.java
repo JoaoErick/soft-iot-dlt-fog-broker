@@ -59,7 +59,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
     this.mqttOptions.setConnectionTimeout(3);
     this.mqttOptions.setKeepAliveInterval(10);
     this.mqttOptions.setAutomaticReconnect(true);
-    this.mqttOptions.setCleanSession(true);
+    this.mqttOptions.setCleanSession(false);
 
     this.mqttOptions.setUserName(this.userName);
     this.mqttOptions.setPassword(this.password.toCharArray());
@@ -236,7 +236,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
   @Override
   public void connectionLost(Throwable cause) {
-    this.printlnDebug("Lost connection to broker. " + cause);
+    this.printlnDebug(String.format("Lost connection to broker (%s). %s", this.ip, cause));
   }
 
   @Override
