@@ -80,7 +80,9 @@ public class ListenerTopK implements IMqttMessageListener {
 
             this.controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
 
-            /* Publicando para a camada superior o Top-K resultante. */
+            /* Aguarda as respostas dos nós da camada inferior conectados a ele; 
+             * e publica para a camada superior o Top-K resultante. 
+             */
             this.controllerImpl.publishTopK(params[1], k);
           } else {
             printlnDebug("==== Fog gateway -> Bottom gateway  ====");
@@ -162,8 +164,6 @@ public class ListenerTopK implements IMqttMessageListener {
         password
       );
 
-      //TODO: Executar a conexão dentro de um try-catch, para quando o nó não estiver mais conectado.
-      //TODO: Se o nó não estiver conectado, removê-lo da lista.
       MQTTClientDown.connect();
       MQTTClientDown.publish(topicDown, messageDown, QOS);
       MQTTClientDown.disconnect();
