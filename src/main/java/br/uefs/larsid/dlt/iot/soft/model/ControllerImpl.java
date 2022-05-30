@@ -45,8 +45,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
 
-  public ControllerImpl() {
-  }
+  public ControllerImpl() {}
 
   /**
    * Inicializa o bundle.
@@ -58,38 +57,53 @@ public class ControllerImpl implements Controller {
     if (hasNodes) {
       nodesUris = new ArrayList<>();
 
-      new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+      new ListenerConnection(
+        this,
+        MQTTClientHost,
+        CONNECT,
+        QOS,
+        debugModeValue
+      );
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
-      new ListenerConnection(this, MQTTClientHost, CONNECT, QOS, debugModeValue);
-      new ListenerConnection(this, MQTTClientHost, DISCONNECT, QOS, debugModeValue);
+      new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+      new ListenerConnection(
+        this,
+        MQTTClientHost,
+        DISCONNECT,
+        QOS,
+        debugModeValue
+      );
     } else {
       byte[] payload = String
-          .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
-          .getBytes();
+        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+        .getBytes();
 
       this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
 
     new ListenerTopK(
-        this,
-        MQTTClientUp,
-        this.nodesUris,
-        TOP_K,
-        QOS,
-        debugModeValue);
+      this,
+      MQTTClientUp,
+      this.nodesUris,
+      TOP_K,
+      QOS,
+      debugModeValue
+    );
   }
 
   /**
    * Finaliza o bundle.
    */
   public void stop() {
-    if(!this.hasNodes) {
+    if (!this.hasNodes) {
       byte[] payload = String
-          .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
-          .getBytes();
+        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+        .getBytes();
 
       this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
     }
+
+    // TODO: Quando o pai cair, enviar algo pros filhos
 
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
@@ -97,7 +111,6 @@ public class ControllerImpl implements Controller {
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
-
   }
 
   /**
@@ -144,11 +157,13 @@ public class ControllerImpl implements Controller {
     } catch (JsonParseException e) {
       e.printStackTrace();
       System.out.println(
-          "Verify the correct format of 'DevicesConnected' property in configuration file.");
+        "Verify the correct format of 'DevicesConnected' property in configuration file."
+      );
     } catch (JsonMappingException e) {
       e.printStackTrace();
       System.out.println(
-          "Verify the correct format of 'DevicesConnected' property in configuration file.");
+        "Verify the correct format of 'DevicesConnected' property in configuration file."
+      );
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -192,8 +207,8 @@ public class ControllerImpl implements Controller {
      * Enquanto a quantidade de respostas da requisição for menor que o número
      * de nós filhos
      */
-    while (this.responseQueue.get(id) < this.nodesUris.size()) {
-    }
+    while (this.responseQueue.get(id) < this.nodesUris.size()) {}
+    //TODO: Colocar um TIMEOUT
 
     /*
      * Consumindo apiIot para pegar os valores mais atualizados dos
@@ -213,9 +228,11 @@ public class ControllerImpl implements Controller {
         this.sendInvalidTopKMessage(
             id,
             String.format(
-                "Can't possible calculate the Top-%s, sending the Top-%d!",
-                k,
-                topkMapSize));
+              "Can't possible calculate the Top-%s, sending the Top-%d!",
+              k,
+              topkMapSize
+            )
+          );
       }
     }
 
@@ -248,21 +265,24 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public Map<String, Integer> sortTopK(
-      Map<String, Integer> devicesAndScoresMap,
-      int k) {
+    Map<String, Integer> devicesAndScoresMap,
+    int k
+  ) {
     Object[] temp = devicesAndScoresMap
-        .entrySet()
-        .stream()
-        .sorted(
-            Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()))
-        .toArray();
+      .entrySet()
+      .stream()
+      .sorted(
+        Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
+      )
+      .toArray();
 
     if (debugModeValue) {
       for (Object e : temp) {
         printlnDebug(
-            ((Map.Entry<String, Integer>) e).getKey() +
-                " : " +
-                ((Map.Entry<String, Integer>) e).getValue());
+          ((Map.Entry<String, Integer>) e).getKey() +
+          " : " +
+          ((Map.Entry<String, Integer>) e).getValue()
+        );
       }
     }
 
@@ -273,8 +293,8 @@ public class ControllerImpl implements Controller {
      * quantidade requisitada.
      */
     int maxIteration = k <= devicesAndScoresMap.size()
-        ? k
-        : devicesAndScoresMap.size();
+      ? k
+      : devicesAndScoresMap.size();
 
     /* Pegando os k piores */
     for (int i = 0; i < maxIteration; i++) {
@@ -335,10 +355,11 @@ public class ControllerImpl implements Controller {
   @Override
   public Map<String, Integer> convertStringToMap(String mapAsString) {
     return Arrays
-        .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
-        .map(entry -> entry.split("="))
-        .collect(
-            Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1])));
+      .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
+      .map(entry -> entry.split("="))
+      .collect(
+        Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1]))
+      );
   }
 
   /**
@@ -405,8 +426,8 @@ public class ControllerImpl implements Controller {
   @Override
   public void sendEmptyTopK(String topicId) {
     byte[] payload = new LinkedHashMap<String, Map<String, Integer>>()
-        .toString()
-        .getBytes();
+      .toString()
+      .getBytes();
 
     this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
@@ -421,6 +442,8 @@ public class ControllerImpl implements Controller {
     if (!this.nodesUris.contains(uri)) {
       this.nodesUris.add(uri);
     }
+
+    printlnDebug(String.format("URI: %s added in the nodesIps list.", uri));
     this.showNodesConnected();
   }
 
@@ -435,10 +458,13 @@ public class ControllerImpl implements Controller {
 
     if (pos != -1) {
       this.nodesUris.remove(pos);
+
+      printlnDebug(String.format("URI: %s removed in the nodesIps list.", uri));
+
+      this.showNodesConnected();
     } else {
       printlnDebug("Error, the desired node was not found.");
     }
-    this.showNodesConnected();
   }
 
   /**
@@ -486,7 +512,7 @@ public class ControllerImpl implements Controller {
       printlnDebug("     " + nodeIp);
     }
 
-    if (this.getNodeUriList().size() == 0){
+    if (this.getNodeUriList().size() == 0) {
       printlnDebug("        empty");
     }
     printlnDebug("+----------------------------+");
