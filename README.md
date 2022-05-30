@@ -15,13 +15,9 @@ Propriedade | Descrição | Valor Padrão
 ------------|-----------|-------------
 ip_up | Endereço IP do *Client* situado na camada acima | localhost
 ip | Endereço IP de onde o *Bundle* está sendo executado | localhost 
-ip_down¹ | Endereço IP do *Client* situado na camada abaixo | localhost
 port | Porta para conexão com o *Broker* | 1883
 user | Usuário para conexão com o *Broker* | karaf
 pass | Senha para conexão com o *Broker* | karaf
 urlAPI | URL da API onde estão os dispositivos | http://localhost:8181/cxf/iot-service/devices
 debugModeValue | Modo depuração | true
-nodes² | Quantidade de filhos na camada abaixo | 1
-
-###### Obs¹: Caso o *Bundle* esteja sendo executado na camada mais baixa (`nodes=0`), a configuração pode ser mantida como: `ip_down=localhost`;
-###### Obs²: Quantidade de `soft-iot-dlt-fog-broker` conectados com o `soft-iot-dlt-fog-broker` da camada superior.
+hasNodes | Se o gateway onde o bundle está sendo executado irá possuir filhos | true

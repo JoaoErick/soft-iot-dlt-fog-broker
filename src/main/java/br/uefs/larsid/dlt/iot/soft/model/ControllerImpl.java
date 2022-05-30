@@ -3,6 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.model;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
@@ -30,17 +31,19 @@ public class ControllerImpl implements Controller {
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
+  private static final String CONNECT = "SYN";
+  private static final String DISCONNECT = "FIN";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
+  private boolean hasNodes;
   private MQTTClient MQTTClientUp;
   private MQTTClient MQTTClientHost;
-  private MQTTClient MQTTClientDown;
-  private String nodes;
   private String urlAPI;
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
+  private List<String> nodesUris;
 
   public ControllerImpl() {}
 
@@ -50,17 +53,38 @@ public class ControllerImpl implements Controller {
   public void start() {
     this.MQTTClientUp.connect();
     this.MQTTClientHost.connect();
-    this.MQTTClientDown.connect();
 
-    if (Integer.parseInt(this.nodes) > 0) {
-      new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+    if (hasNodes) {
+      nodesUris = new ArrayList<>();
+
+      new ListenerConnection(
+        this,
+        MQTTClientHost,
+        CONNECT,
+        QOS,
+        debugModeValue
+      );
       new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+      new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+      new ListenerConnection(
+        this,
+        MQTTClientHost,
+        DISCONNECT,
+        QOS,
+        debugModeValue
+      );
+    } else {
+      byte[] payload = String
+        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+        .getBytes();
+
+      this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
 
     new ListenerTopK(
       this,
       MQTTClientUp,
-      MQTTClientDown,
+      this.nodesUris,
       TOP_K,
       QOS,
       debugModeValue
@@ -71,13 +95,22 @@ public class ControllerImpl implements Controller {
    * Finaliza o bundle.
    */
   public void stop() {
+    if (!this.hasNodes) {
+      byte[] payload = String
+        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+        .getBytes();
+
+      this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
+    }
+
+    // TODO: Quando o pai cair, enviar algo pros filhos
+
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
     this.MQTTClientUp.unsubscribe(TOP_K);
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
-    this.MQTTClientDown.disconnect();
   }
 
   /**
@@ -164,18 +197,23 @@ public class ControllerImpl implements Controller {
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
-   * @param k int - Quantidade de scores requisitados.
+   * @param k  int - Quantidade de scores requisitados.
    */
   @Override
   public void publishTopK(String id, int k) {
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
 
-    /* Enquanto a quantidade de respostas da requisição for menor que o número 
-    de nós filhos */
-    while (this.responseQueue.get(id) < Integer.parseInt(this.nodes)) {}
+    /*
+     * Enquanto a quantidade de respostas da requisição for menor que o número
+     * de nós filhos
+     */
+    while (this.responseQueue.get(id) < this.nodesUris.size()) {}
+    //TODO: Colocar um TIMEOUT
 
-    /* Consumindo apiIot para pegar os valores mais atualizados dos 
-    dispositivos. */
+    /*
+     * Consumindo apiIot para pegar os valores mais atualizados dos
+     * dispositivos.
+     */
     this.loadConnectedDevices();
 
     if (!this.devices.isEmpty()) {
@@ -200,8 +238,10 @@ public class ControllerImpl implements Controller {
 
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
 
-    /* Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e 
-    atribuindo-o à carga de mensagem do MQTT */
+    /*
+     * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+     * atribuindo-o à carga de mensagem do MQTT
+     */
     Map<String, Integer> topK = sortTopK(this.getMapById(id), k);
 
     printlnDebug("Top-K Result => " + topK.toString());
@@ -219,7 +259,7 @@ public class ControllerImpl implements Controller {
    * Calcula o Top-K.
    *
    * @param devicesAndScoresMap Map - Mapa de Top-K
-   * @param k int - Quantidade de scores requisitados.
+   * @param k                   int - Quantidade de scores requisitados.
    * @return Map
    *
    */
@@ -248,8 +288,10 @@ public class ControllerImpl implements Controller {
 
     Map<String, Integer> topK = new LinkedHashMap<String, Integer>();
 
-    /* Caso a quantidade de dispositivos conectados seja menor que a 
-    quantidade requisitada. */
+    /*
+     * Caso a quantidade de dispositivos conectados seja menor que a
+     * quantidade requisitada.
+     */
     int maxIteration = k <= devicesAndScoresMap.size()
       ? k
       : devicesAndScoresMap.size();
@@ -264,7 +306,7 @@ public class ControllerImpl implements Controller {
   }
 
   /**
-   *  Retorna o mapa de requisições do sistema, composto pelo
+   * Retorna o mapa de requisições do sistema, composto pelo
    * id da requisição (chave) e o mapa de scores (valor).
    * O mapa de scores é composto pelo nome do dispositivo (Chave)
    * e o score (valor) associado.
@@ -292,7 +334,7 @@ public class ControllerImpl implements Controller {
    * Adiciona um mapa de scores de uma nova requisição no mapa de
    * requisições na sua respectiva.
    *
-   * @param id String - Id da requisição.
+   * @param id     String - Id da requisição.
    * @param fogMap Map - Mapa de requisições.
    */
   @Override
@@ -369,7 +411,7 @@ public class ControllerImpl implements Controller {
   /**
    * Remove uma resposta específica da fila de respostas.
    *
-   *@param id String - Id da requisição.
+   * @param id String - Id da requisição.
    */
   @Override
   public void removeSpecificResponse(String id) {
@@ -390,10 +432,65 @@ public class ControllerImpl implements Controller {
     this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
 
-  private void printlnDebug(String str) {
-    if (debugModeValue) {
-      System.out.println(str);
+  /**
+   * Adiciona um URI na lista de URIs.
+   *
+   * @param uri String - URI que deseja adicionar.
+   */
+  @Override
+  public void addNodeUri(String uri) {
+    if (!this.nodesUris.contains(uri)) {
+      this.nodesUris.add(uri);
     }
+
+    printlnDebug(String.format("URI: %s added in the nodesIps list.", uri));
+    this.showNodesConnected();
+  }
+
+  /**
+   * Remove uma URI na lista de URIs.
+   *
+   * @param uri String - URI que deseja remover.
+   */
+  @Override
+  public void removeNodeUri(String uri) {
+    int pos = this.findNodeUri(uri);
+
+    if (pos != -1) {
+      this.nodesUris.remove(pos);
+
+      printlnDebug(String.format("URI: %s removed in the nodesIps list.", uri));
+
+      this.showNodesConnected();
+    } else {
+      printlnDebug("Error, the desired node was not found.");
+    }
+  }
+
+  /**
+   * Retorna a posição de um URI na lista de URIs
+   *
+   * @param uri String - URI que deseja a posição.
+   * @return int
+   */
+  private int findNodeUri(String uri) {
+    for (int pos = 0; pos < this.nodesUris.size(); pos++) {
+      if (this.nodesUris.get(pos).equals(uri)) {
+        return pos;
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * Retorna a lista de URIs dos nós conectados.
+   *
+   * @return List
+   */
+  @Override
+  public List<String> getNodeUriList() {
+    return this.nodesUris;
   }
 
   /**
@@ -402,12 +499,29 @@ public class ControllerImpl implements Controller {
    * @return String
    */
   @Override
-  public String getNodes() {
-    return nodes;
+  public int getNodes() {
+    return this.nodesUris.size();
   }
 
-  public void setNodes(String nodes) {
-    this.nodes = nodes;
+  /**
+   * Exibe a URI dos nós que estão conectados.
+   */
+  public void showNodesConnected() {
+    printlnDebug("+---- Nodes URI Connected ----+");
+    for (String nodeIp : this.getNodeUriList()) {
+      printlnDebug("     " + nodeIp);
+    }
+
+    if (this.getNodeUriList().size() == 0) {
+      printlnDebug("        empty");
+    }
+    printlnDebug("+----------------------------+");
+  }
+
+  private void printlnDebug(String str) {
+    if (debugModeValue) {
+      System.out.println(str);
+    }
   }
 
   public boolean isDebugModeValue() {
@@ -454,11 +568,25 @@ public class ControllerImpl implements Controller {
     this.devices = devices;
   }
 
-  public MQTTClient getMQTTClientDown() {
-    return MQTTClientDown;
+  public List<String> getNodesUris() {
+    return nodesUris;
   }
 
-  public void setMQTTClientDown(MQTTClient mQTTClientDown) {
-    MQTTClientDown = mQTTClientDown;
+  public void setNodesUris(List<String> nodesUris) {
+    this.nodesUris = nodesUris;
+  }
+
+  /**
+   * Verifica se o gateway possui filhos.
+   *
+   * @return boolean
+   */
+  @Override
+  public boolean hasNodes() {
+    return hasNodes;
+  }
+
+  public void setHasNodes(boolean hasNodes) {
+    this.hasNodes = hasNodes;
   }
 }

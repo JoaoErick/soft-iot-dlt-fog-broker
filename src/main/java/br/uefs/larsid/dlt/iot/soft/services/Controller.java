@@ -98,7 +98,7 @@ public interface Controller {
    *
    * @return String
    */
-  String getNodes();
+  int getNodes();
 
   /**
    * Retorna a quantidade de nós conectados.
@@ -132,4 +132,37 @@ public interface Controller {
    * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
    */
   void loadConnectedDevices();
+
+  /**
+   * Adiciona um URI na lista de URIs.
+   *
+   * @param uri String - URI que deseja adicionar.
+   */
+  public void addNodeUri(String uri);
+
+  /**
+   * Remove uma URI na lista de URIs.
+   *
+   * @param uri String - URI que deseja remover.
+   */
+  public void removeNodeUri(String uri);
+
+  /**
+   * Verifica se o gateway possui filhos.
+   *
+   * @return boolean
+   */
+  public boolean hasNodes();
+
+  /**
+   * Retorna a lista de URIs dos nós conectados.
+   *
+   * @return List
+   */
+  public List<String> getNodeUriList();
+
+  /**
+   * Exibe a URI dos nós que estão conectados.
+   */
+  public void showNodesConnected() ;
 }
