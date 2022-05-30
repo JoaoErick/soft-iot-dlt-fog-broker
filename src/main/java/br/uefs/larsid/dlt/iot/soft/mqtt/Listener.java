@@ -68,6 +68,7 @@ public class Listener implements IMqttMessageListener {
           /* Adicionando nova requisição. */
           this.controllerImpl.updateResponse(params[1]);
         } else {
+          // TODO: Testar com um dos filhos com mapa vazio.
           this.controllerImpl.sendEmptyTopK(params[1]);
           this.controllerImpl.removeRequest(params[1]);
         }
