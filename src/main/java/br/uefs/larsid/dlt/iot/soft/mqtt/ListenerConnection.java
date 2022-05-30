@@ -51,17 +51,9 @@ public class ListenerConnection implements IMqttMessageListener {
       case CONNECT:
         this.controllerImpl.addNodeUri(uriDown);
 
-        printlnDebug(
-          String.format("URI: %s added in the nodesIps list.", uriDown)
-        );
-
         break;
       case DISCONNECT:
         this.controllerImpl.removeNodeUri(uriDown);
-
-        printlnDebug(
-          String.format("URI: %s removed in the nodesIps list.", uriDown)
-        );
 
         break;
     }
