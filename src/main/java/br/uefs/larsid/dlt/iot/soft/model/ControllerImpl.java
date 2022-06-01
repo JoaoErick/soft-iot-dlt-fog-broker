@@ -44,6 +44,7 @@ public class ControllerImpl implements Controller {
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
+  private int timeoutInSeconds;
 
   public ControllerImpl() {}
 
@@ -102,8 +103,6 @@ public class ControllerImpl implements Controller {
 
       this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
     }
-
-    // TODO: Quando o pai cair, enviar algo pros filhos
 
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
@@ -203,12 +202,17 @@ public class ControllerImpl implements Controller {
   public void publishTopK(String id, int k) {
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
 
+    long start = System.currentTimeMillis();
+    long end = start + this.timeoutInSeconds * 1000;
+
     /*
      * Enquanto a quantidade de respostas da requisição for menor que o número
      * de nós filhos
      */
-    while (this.responseQueue.get(id) < this.nodesUris.size()) {}
-    //TODO: Colocar um TIMEOUT
+    while (
+      this.responseQueue.get(id) < this.nodesUris.size() &&
+      System.currentTimeMillis() < end
+    ) {}
 
     /*
      * Consumindo apiIot para pegar os valores mais atualizados dos
@@ -588,5 +592,9 @@ public class ControllerImpl implements Controller {
 
   public void setHasNodes(boolean hasNodes) {
     this.hasNodes = hasNodes;
+  }
+
+  public void setTimeoutInSeconds(int timeoutInSeconds) {
+    this.timeoutInSeconds = timeoutInSeconds;
   }
 }

@@ -19,5 +19,6 @@ port | Porta para conexão com o *Broker* | 1883
 user | Usuário para conexão com o *Broker* | karaf
 pass | Senha para conexão com o *Broker* | karaf
 urlAPI | URL da API onde estão os dispositivos | http://localhost:8181/cxf/iot-service/devices
-debugModeValue | Modo depuração | true
 hasNodes | Se o gateway onde o bundle está sendo executado irá possuir filhos | true
+timeoutInSeconds | Tempo máximo de espera da resposta dos filhos | 30
+debugModeValue | Modo depuração | true
