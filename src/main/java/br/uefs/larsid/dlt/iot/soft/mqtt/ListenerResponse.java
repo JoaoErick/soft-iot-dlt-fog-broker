@@ -5,7 +5,7 @@ import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-public class Listener implements IMqttMessageListener {
+public class ListenerResponse implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES";
@@ -25,7 +25,7 @@ public class Listener implements IMqttMessageListener {
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
-  public Listener(
+  public ListenerResponse(
     Controller controllerImpl,
     MQTTClient MQTTClientHost,
     String topic,

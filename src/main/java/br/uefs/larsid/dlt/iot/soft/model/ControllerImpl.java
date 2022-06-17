@@ -2,9 +2,9 @@ package br.uefs.larsid.dlt.iot.soft.model;
 
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
-import br.uefs.larsid.dlt.iot.soft.mqtt.Listener;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
-import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerTopK;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -65,8 +65,8 @@ public class ControllerImpl implements Controller {
         QOS,
         debugModeValue
       );
-      new Listener(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
-      new Listener(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+      new ListenerResponse(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
+      new ListenerResponse(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
       new ListenerConnection(
         this,
         MQTTClientHost,
@@ -82,7 +82,7 @@ public class ControllerImpl implements Controller {
       this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
 
-    new ListenerTopK(
+    new ListenerRequest(
       this,
       MQTTClientUp,
       this.nodesUris,
