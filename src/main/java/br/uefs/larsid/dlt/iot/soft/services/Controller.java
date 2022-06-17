@@ -4,6 +4,8 @@ import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
+
 public interface Controller {
   /**
    * Calcula o score dos dispositivos conectados.
@@ -165,4 +167,14 @@ public interface Controller {
    * Exibe a URI dos nós que estão conectados.
    */
   public void showNodesConnected() ;
+
+  /**
+   * Publica os tipos de sensores para a camada de cima.
+   */
+  public void publishSensorType();
+
+  // TODO: Adicionar comentários.
+  public void putSensorsTypes(JSONObject jsonReceived);
+
+  public JSONObject getSensorsTypes();
 }
