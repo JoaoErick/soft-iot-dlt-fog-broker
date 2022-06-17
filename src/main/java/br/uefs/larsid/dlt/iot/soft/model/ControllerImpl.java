@@ -2,9 +2,9 @@ package br.uefs.larsid.dlt.iot.soft.model;
 
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
-import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -26,8 +27,11 @@ public class ControllerImpl implements Controller {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
-  private static final String TOP_K = "TOP_K_HEALTH_FOG/#";
+  private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
+  private static final String TOP_K = "TOP_K_HEALTH/#";
+  private static final String SENSORS = "SENSORS/";
   private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
+  private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
@@ -45,6 +49,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
   private int timeoutInSeconds;
+  private JSONObject sensorsTypes = new JSONObject();
 
   public ControllerImpl() {}
 
@@ -57,6 +62,17 @@ public class ControllerImpl implements Controller {
 
     if (hasNodes) {
       nodesUris = new ArrayList<>();
+      String[] topics = { TOP_K_FOG, SENSORS };
+
+      new ListenerRequest(
+        this,
+        MQTTClientUp,
+        MQTTClientHost,
+        this.nodesUris,
+        topics,
+        QOS,
+        debugModeValue
+      );
 
       new ListenerConnection(
         this,
@@ -65,8 +81,20 @@ public class ControllerImpl implements Controller {
         QOS,
         debugModeValue
       );
-      new ListenerResponse(this, MQTTClientHost, TOP_K_RES, QOS, debugModeValue);
-      new ListenerResponse(this, MQTTClientHost, INVALID_TOP_K, QOS, debugModeValue);
+      new ListenerResponse(
+        this,
+        MQTTClientHost,
+        TOP_K_RES,
+        QOS,
+        debugModeValue
+      );
+      new ListenerResponse(
+        this,
+        MQTTClientHost,
+        INVALID_TOP_K,
+        QOS,
+        debugModeValue
+      );
       new ListenerConnection(
         this,
         MQTTClientHost,
@@ -75,21 +103,24 @@ public class ControllerImpl implements Controller {
         debugModeValue
       );
     } else {
+      String[] topics = { TOP_K, SENSORS };
+
+      new ListenerRequest(
+        this,
+        MQTTClientUp,
+        MQTTClientHost,
+        this.nodesUris,
+        topics,
+        QOS,
+        debugModeValue
+      );
+
       byte[] payload = String
         .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
         .getBytes();
 
       this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
-
-    new ListenerRequest(
-      this,
-      MQTTClientUp,
-      this.nodesUris,
-      TOP_K,
-      QOS,
-      debugModeValue
-    );
   }
 
   /**
@@ -106,6 +137,7 @@ public class ControllerImpl implements Controller {
 
     this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
     this.MQTTClientHost.unsubscribe(TOP_K_RES);
+    this.MQTTClientUp.unsubscribe(TOP_K_FOG);
     this.MQTTClientUp.unsubscribe(TOP_K);
 
     this.MQTTClientHost.disconnect();
@@ -259,6 +291,33 @@ public class ControllerImpl implements Controller {
     this.removeSpecificResponse(id);
   }
 
+  // TODO: Testar método.
+  /**
+   * Publica os tipos de sensores para a camada de cima.
+   */
+  @Override
+  public void publishSensorType() {
+    printlnDebug("Waiting for Gateway nodes to send their sensors types");
+
+    long start = System.currentTimeMillis();
+    long end = start + this.timeoutInSeconds * 1000;
+
+    /*
+     * Enquanto a quantidade de respostas da requisição for menor que o número
+     * de nós filhos
+     */
+    while (
+      this.responseQueue.get("getSensors") < this.nodesUris.size() &&
+      System.currentTimeMillis() < end
+    ) {}
+
+    byte[] payload = sensorsTypes.toString().getBytes();
+
+    MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
+
+    this.removeSpecificResponse("getSensors");
+  }
+
   /**
    * Calcula o Top-K.
    *
@@ -347,6 +406,42 @@ public class ControllerImpl implements Controller {
       this.topKScores.get(id).putAll(fogMap);
     } else {
       this.topKScores.put(id, fogMap).isEmpty();
+    }
+  }
+
+  // TODO: Testar método.
+  @Override
+  public void putSensorsTypes(JSONObject jsonReceived) {
+    if (sensorsTypes.getJSONArray("sensors").length() == 0) {
+      sensorsTypes = jsonReceived;
+    } else {
+      // TODO: Renomear variáveis.
+      JSONArray temp = sensorsTypes.getJSONArray("sensors");
+      JSONArray temp2 = jsonReceived.getJSONArray("sensors");
+
+      if (!temp.equals(temp2) || temp2.length() > 0) {
+        String[] temp3 = new String[temp.length()];
+        String[] temp4 = new String[temp2.length()];
+
+        for (int i = 0; i < temp.length(); i++) {
+          temp3[i] = temp.getString(i);
+        }
+
+        for (int i = 0; i < temp2.length(); i++) {
+          temp4[i] = temp2.getString(i);
+        }
+
+        String[] result = Stream
+          .concat( // combine
+            Stream.of(temp),
+            Stream.of(temp2)
+          )
+          .distinct() // filter duplicates
+          .sorted() // sort
+          .toArray(String[]::new);
+
+        sensorsTypes.put("sensors", result);
+      }
     }
   }
 
@@ -596,5 +691,10 @@ public class ControllerImpl implements Controller {
 
   public void setTimeoutInSeconds(int timeoutInSeconds) {
     this.timeoutInSeconds = timeoutInSeconds;
+  }
+
+  @Override
+  public JSONObject getSensorsTypes() {
+    return sensorsTypes;
   }
 }
