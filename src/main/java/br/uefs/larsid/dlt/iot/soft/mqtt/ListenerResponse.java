@@ -4,12 +4,14 @@ import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.JSONObject;
 
 public class ListenerResponse implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES";
   private static final String INVALID_TOP_K = "INVALID_TOP_K";
+  private static final String SENSORS_RES = "SENSORS_RES";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -45,11 +47,13 @@ public class ListenerResponse implements IMqttMessageListener {
     final String[] params = topic.split("/");
     String messageContent = new String(message.getPayload());
 
+
     printlnDebug("==== Bottom gateway -> Fog gateway  ====");
 
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
       case TOP_K_RES:
+
         /* Se o mapa de scores recebido for diferente de vazio. */
         if (!messageContent.equals("{}")) {
           Map<String, Integer> fogMap =
@@ -76,6 +80,15 @@ public class ListenerResponse implements IMqttMessageListener {
         break;
       case INVALID_TOP_K:
         printlnDebug("Invalid Top-K! - " + messageContent);
+        break;
+      case SENSORS_RES:
+        //TODO: Testar
+        JSONObject jsonResponse = new JSONObject(messageContent);
+        this.controllerImpl.putSensorsTypes(jsonResponse);
+        
+        /* Adicionando nova requisição. */
+        this.controllerImpl.updateResponse(params[1]);
+        
         break;
     }
   }
