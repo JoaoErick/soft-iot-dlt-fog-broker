@@ -16,6 +16,7 @@ public class ListenerRequest implements IMqttMessageListener {
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG";
   private static final String TOP_K = "TOP_K_HEALTH";
+  private static final String SENSORS_FOG = "SENSORS_FOG";
   private static final String SENSORS = "SENSORS";
   private static final String SENSORS_RES = "SENSORS_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
@@ -39,7 +40,7 @@ public class ListenerRequest implements IMqttMessageListener {
    * @param MQTTClientUp   MQTTClient - Cliente MQTT do gateway superior.
    * @param MQTTClientHost   MQTTClient - Cliente MQTT do próprio gateway.
    * @param nodesUris   List<String> - Lista de URIs.
-   * @param topics          String[] - Tópicos que serão inscritos.
+   * @param topics          String[] - Tópicos que serão assinados.
    * @param qos            int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
@@ -165,43 +166,39 @@ public class ListenerRequest implements IMqttMessageListener {
         }
 
         break;
-      case SENSORS:
+      case SENSORS_FOG:
         switch (mqttMessage) {
           case GET_SENSORS:
-            if (controllerImpl.hasNodes()) {
-              printlnDebug("==== Cloud gateway -> Fog gateway  ====");
+            printlnDebug("==== Cloud gateway -> Fog gateway  ====");
 
-              /**
-               * Requisitando os dispositivos que estão conectados ao próprio nó.
-               */
-              this.controllerImpl.loadConnectedDevices();
+            /**
+             * Requisitando os dispositivos que estão conectados ao próprio nó.
+             */
+            this.controllerImpl.loadConnectedDevices();
 
-              /**
-               * Caso existam dispositivos conectados ao próprio nó.
-               */
-              if (this.controllerImpl.getDevices().size() > 0) {
-                JSONObject json = loadSensorsTypes();
-                byte[] payload = json.toString().getBytes();
-
-                MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
-              } else {
-                this.controllerImpl.getSensorsTypes()
-                  .put("sensors", new JSONArray());
-
-                /* Criando uma nova chave, no mapa de requisições */
-                this.controllerImpl.addResponse("getSensors");
-
-                byte[] messageDown = message.getPayload();
-
-                this.publishToDown(SENSORS, messageDown);
-              }
-            } else {
-              printlnDebug("==== Fog gateway -> Bottom gateway  ====");
-
+            /**
+             * Caso existam dispositivos conectados ao próprio nó.
+             */
+            if (this.controllerImpl.getDevices().size() > 0) {
               JSONObject json = loadSensorsTypes();
               byte[] payload = json.toString().getBytes();
 
-              MQTTClientUp.publish(SENSORS_RES, payload, 1);
+              MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
+            } else {
+              this.controllerImpl.getSensorsTypesJSON()
+                .put("sensors", new JSONArray());
+
+              /* Criando uma nova chave, no mapa de requisições */
+              this.controllerImpl.addResponse("getSensors");
+
+              byte[] messageDown = message.getPayload();
+
+              this.publishToDown(SENSORS + "/", messageDown);
+
+              /* Aguarda as respostas dos nós da camada inferior conectados a
+               * ele; e publica para a camada superior.
+               */
+              this.controllerImpl.publishSensorType();
             }
 
             break;
@@ -217,6 +214,36 @@ public class ListenerRequest implements IMqttMessageListener {
             break;
         }
 
+        break;
+      case SENSORS:
+        byte[] payload;
+
+        switch (mqttMessage) {
+          case GET_SENSORS:
+            printlnDebug("==== Fog gateway -> Bottom gateway  ====");
+
+            /**
+             * Requisitando os dispositivos que estão conectados ao próprio nó.
+             */
+            this.controllerImpl.loadConnectedDevices();
+
+            JSONObject json = loadSensorsTypes();
+            payload = json.toString().getBytes();
+
+            MQTTClientUp.publish(SENSORS_RES, payload, 1);
+
+            break;
+          default:
+            String responseMessage = String.format(
+              "\nOops! the request isn't recognized...\nTry one of the options below:\n- %s\n",
+              GET_SENSORS
+            );
+            payload = responseMessage.getBytes();
+
+            MQTTClientUp.publish(SENSORS_RES, payload, 1);
+
+            break;
+        }
         break;
     }
   }
