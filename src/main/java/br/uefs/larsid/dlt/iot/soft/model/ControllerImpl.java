@@ -29,9 +29,11 @@ public class ControllerImpl implements Controller {
   private static final int QOS = 1;
   private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K = "TOP_K_HEALTH/#";
+  private static final String SENSORS_FOG = "SENSORS_FOG/";
   private static final String SENSORS = "SENSORS/";
   private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
+  private static final String SENSORS_RES = "SENSORS_RES/";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
@@ -49,7 +51,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
   private int timeoutInSeconds;
-  private JSONObject sensorsTypes = new JSONObject();
+  private JSONObject sensorsTypesJSON = new JSONObject();
 
   public ControllerImpl() {}
 
@@ -62,43 +64,30 @@ public class ControllerImpl implements Controller {
 
     if (hasNodes) {
       nodesUris = new ArrayList<>();
-      String[] topics = { TOP_K_FOG, SENSORS };
+      String[] topicsRequest = { TOP_K_FOG, SENSORS_FOG };
+      String[] topicsConnection = { CONNECT, DISCONNECT };
+      String[] topicsResponse = { TOP_K_RES, INVALID_TOP_K, SENSORS_RES };
 
       new ListenerRequest(
         this,
         MQTTClientUp,
         MQTTClientHost,
         this.nodesUris,
-        topics,
-        QOS,
-        debugModeValue
-      );
-
-      new ListenerConnection(
-        this,
-        MQTTClientHost,
-        CONNECT,
-        QOS,
-        debugModeValue
-      );
-      new ListenerResponse(
-        this,
-        MQTTClientHost,
-        TOP_K_RES,
-        QOS,
-        debugModeValue
-      );
-      new ListenerResponse(
-        this,
-        MQTTClientHost,
-        INVALID_TOP_K,
+        topicsRequest,
         QOS,
         debugModeValue
       );
       new ListenerConnection(
         this,
         MQTTClientHost,
-        DISCONNECT,
+        topicsConnection,
+        QOS,
+        debugModeValue
+      );
+      new ListenerResponse(
+        this,
+        MQTTClientHost,
+        topicsResponse,
         QOS,
         debugModeValue
       );
@@ -133,12 +122,18 @@ public class ControllerImpl implements Controller {
         .getBytes();
 
       this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
-    }
 
-    this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
-    this.MQTTClientHost.unsubscribe(TOP_K_RES);
-    this.MQTTClientUp.unsubscribe(TOP_K_FOG);
-    this.MQTTClientUp.unsubscribe(TOP_K);
+      this.MQTTClientUp.unsubscribe(TOP_K);
+      this.MQTTClientUp.unsubscribe(SENSORS);
+    } else {
+      this.MQTTClientUp.unsubscribe(TOP_K_FOG);
+      this.MQTTClientUp.unsubscribe(SENSORS_FOG);
+      this.MQTTClientUp.unsubscribe(CONNECT);
+      this.MQTTClientUp.unsubscribe(DISCONNECT);
+      this.MQTTClientHost.unsubscribe(TOP_K_RES);
+      this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
+      this.MQTTClientHost.unsubscribe(SENSORS_RES);
+    }
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
@@ -291,7 +286,6 @@ public class ControllerImpl implements Controller {
     this.removeSpecificResponse(id);
   }
 
-  // TODO: Testar método.
   /**
    * Publica os tipos de sensores para a camada de cima.
    */
@@ -311,7 +305,7 @@ public class ControllerImpl implements Controller {
       System.currentTimeMillis() < end
     ) {}
 
-    byte[] payload = sensorsTypes.toString().getBytes();
+    byte[] payload = sensorsTypesJSON.toString().getBytes();
 
     MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
 
@@ -409,38 +403,48 @@ public class ControllerImpl implements Controller {
     }
   }
 
-  // TODO: Testar método.
+  /**
+   * Adiciona os sensores em um JSON para enviar para a camada superior.
+   *
+   * @param jsonReceived JSONObject - JSON contendo os tipos dos sensores.
+   */
   @Override
   public void putSensorsTypes(JSONObject jsonReceived) {
-    if (sensorsTypes.getJSONArray("sensors").length() == 0) {
-      sensorsTypes = jsonReceived;
+    if (sensorsTypesJSON.getJSONArray("sensors").length() == 0) {
+      sensorsTypesJSON = jsonReceived;
     } else {
-      // TODO: Renomear variáveis.
-      JSONArray temp = sensorsTypes.getJSONArray("sensors");
-      JSONArray temp2 = jsonReceived.getJSONArray("sensors");
+      JSONArray sensorsTypesJSONArray = sensorsTypesJSON.getJSONArray(
+        "sensors"
+      );
+      JSONArray receivedJSONArray = jsonReceived.getJSONArray("sensors");
 
-      if (!temp.equals(temp2) || temp2.length() > 0) {
-        String[] temp3 = new String[temp.length()];
-        String[] temp4 = new String[temp2.length()];
+      if (
+        !sensorsTypesJSONArray
+          .toString()
+          .equals(receivedJSONArray.toString()) ||
+        receivedJSONArray.length() > 0
+      ) {
+        String[] sensorsTypesArray = new String[sensorsTypesJSONArray.length()];
+        String[] receivedArray = new String[receivedJSONArray.length()];
 
-        for (int i = 0; i < temp.length(); i++) {
-          temp3[i] = temp.getString(i);
+        for (int i = 0; i < sensorsTypesJSONArray.length(); i++) {
+          sensorsTypesArray[i] = sensorsTypesJSONArray.getString(i);
         }
 
-        for (int i = 0; i < temp2.length(); i++) {
-          temp4[i] = temp2.getString(i);
+        for (int i = 0; i < receivedJSONArray.length(); i++) {
+          receivedArray[i] = receivedJSONArray.getString(i);
         }
 
         String[] result = Stream
           .concat( // combine
-            Stream.of(temp),
-            Stream.of(temp2)
+            Stream.of(sensorsTypesArray),
+            Stream.of(receivedArray)
           )
           .distinct() // filter duplicates
           .sorted() // sort
           .toArray(String[]::new);
 
-        sensorsTypes.put("sensors", result);
+        sensorsTypesJSON.put("sensors", new JSONArray(result));
       }
     }
   }
@@ -693,8 +697,13 @@ public class ControllerImpl implements Controller {
     this.timeoutInSeconds = timeoutInSeconds;
   }
 
+  /**
+   * Retorna um JSON contendo os tipos de sensores disponíveis.
+   *
+   * @return JSONObject
+   */
   @Override
-  public JSONObject getSensorsTypes() {
-    return sensorsTypes;
+  public JSONObject getSensorsTypesJSON() {
+    return sensorsTypesJSON;
   }
 }
