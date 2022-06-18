@@ -20,14 +20,14 @@ public class ListenerConnection implements IMqttMessageListener {
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
-   * @param topic String - Tópico que será ouvido
+   * @param topics String[] - Tópicos que serão assinados.
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public ListenerConnection(
     Controller controllerImpl,
     MQTTClient MQTTClientHost,
-    String topic,
+    String[] topics,
     int qos,
     boolean debugModeValue
   ) {
@@ -35,7 +35,9 @@ public class ListenerConnection implements IMqttMessageListener {
     this.MQTTClientHost = MQTTClientHost;
     this.debugModeValue = debugModeValue;
 
-    this.MQTTClientHost.subscribe(qos, this, topic);
+    for (String topic : topics) {
+      this.MQTTClientHost.subscribe(qos, this, topic);
+    }
   }
 
   @Override
