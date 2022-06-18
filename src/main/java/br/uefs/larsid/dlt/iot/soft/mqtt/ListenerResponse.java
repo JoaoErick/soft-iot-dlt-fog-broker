@@ -23,14 +23,14 @@ public class ListenerResponse implements IMqttMessageListener {
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
-   * @param topic String - Tópico que será ouvido
+   * @param topics String[] - Tópicos que serão assinados.
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
   public ListenerResponse(
     Controller controllerImpl,
     MQTTClient MQTTClientHost,
-    String topic,
+    String[] topics,
     int qos,
     boolean debugModeValue
   ) {
@@ -38,7 +38,9 @@ public class ListenerResponse implements IMqttMessageListener {
     this.MQTTClientHost = MQTTClientHost;
     this.debugModeValue = debugModeValue;
 
-    this.MQTTClientHost.subscribe(qos, this, topic);
+    for (String topic : topics) {
+      this.MQTTClientHost.subscribe(qos, this, topic);
+    }
   }
 
   @Override
@@ -47,13 +49,11 @@ public class ListenerResponse implements IMqttMessageListener {
     final String[] params = topic.split("/");
     String messageContent = new String(message.getPayload());
 
-
     printlnDebug("==== Bottom gateway -> Fog gateway  ====");
 
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
       case TOP_K_RES:
-
         /* Se o mapa de scores recebido for diferente de vazio. */
         if (!messageContent.equals("{}")) {
           Map<String, Integer> fogMap =
@@ -82,13 +82,14 @@ public class ListenerResponse implements IMqttMessageListener {
         printlnDebug("Invalid Top-K! - " + messageContent);
         break;
       case SENSORS_RES:
-        //TODO: Testar
         JSONObject jsonResponse = new JSONObject(messageContent);
         this.controllerImpl.putSensorsTypes(jsonResponse);
-        
+
+        printlnDebug("Sensors response received and add to the map");
+
         /* Adicionando nova requisição. */
-        this.controllerImpl.updateResponse(params[1]);
-        
+        this.controllerImpl.updateResponse("getSensors");
+
         break;
     }
   }
