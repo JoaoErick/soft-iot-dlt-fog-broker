@@ -7,18 +7,16 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -273,7 +271,11 @@ public class ControllerImpl implements Controller {
      * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
      * atribuindo-o à carga de mensagem do MQTT
      */
-    Map<String, Integer> topK = sortTopK(this.getMapById(id), k);
+    Map<String, Integer> topK = SortTopK.sortTopK(
+      this.getMapById(id),
+      k,
+      debugModeValue
+    );
 
     printlnDebug("Top-K Result => " + topK.toString());
     printlnDebug("==== Fog gateway -> Cloud gateway  ====");
@@ -310,56 +312,6 @@ public class ControllerImpl implements Controller {
     MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
 
     this.removeSpecificResponse("getSensors");
-  }
-
-  /**
-   * Calcula o Top-K.
-   *
-   * @param devicesAndScoresMap Map - Mapa de Top-K
-   * @param k                   int - Quantidade de scores requisitados.
-   * @return Map
-   *
-   */
-  @Override
-  public Map<String, Integer> sortTopK(
-    Map<String, Integer> devicesAndScoresMap,
-    int k
-  ) {
-    Object[] temp = devicesAndScoresMap
-      .entrySet()
-      .stream()
-      .sorted(
-        Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
-      )
-      .toArray();
-
-    if (debugModeValue) {
-      for (Object e : temp) {
-        printlnDebug(
-          ((Map.Entry<String, Integer>) e).getKey() +
-          " : " +
-          ((Map.Entry<String, Integer>) e).getValue()
-        );
-      }
-    }
-
-    Map<String, Integer> topK = new LinkedHashMap<String, Integer>();
-
-    /*
-     * Caso a quantidade de dispositivos conectados seja menor que a
-     * quantidade requisitada.
-     */
-    int maxIteration = k <= devicesAndScoresMap.size()
-      ? k
-      : devicesAndScoresMap.size();
-
-    /* Pegando os k piores */
-    for (int i = 0; i < maxIteration; i++) {
-      Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) temp[i];
-      topK.put(e.getKey(), e.getValue());
-    }
-
-    return topK;
   }
 
   /**
@@ -447,22 +399,6 @@ public class ControllerImpl implements Controller {
         sensorsTypesJSON.put("sensors", new JSONArray(result));
       }
     }
-  }
-
-  /**
-   * Converte uma String em um Map.
-   *
-   * @param mapAsString String - String que deseja converter.
-   * @return Map
-   */
-  @Override
-  public Map<String, Integer> convertStringToMap(String mapAsString) {
-    return Arrays
-      .stream(mapAsString.substring(1, mapAsString.length() - 1).split(", "))
-      .map(entry -> entry.split("="))
-      .collect(
-        Collectors.toMap(entry -> entry[0], entry -> Integer.parseInt(entry[1]))
-      );
   }
 
   /**

@@ -14,19 +14,6 @@ public interface Controller {
   Map<String, Integer> calculateScores();
 
   /**
-   * Calcula o Top-K.
-   *
-   * @param devicesAndScoresMap Map - Mapa de Top-K
-   * @param k int - Quantidade de scores requisitados.
-   * @return Map
-   *
-   */
-  Map<String, Integer> sortTopK(
-    Map<String, Integer> devicesAndScoresMap,
-    int k
-  );
-
-  /**
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
@@ -61,14 +48,6 @@ public interface Controller {
    * @return Map
    */
   Map<String, Map<String, Integer>> getTopKScores();
-
-  /**
-   * Converte uma String em um Map.
-   *
-   * @param mapAsString String - String que deseja converter.
-   * @return Map
-   */
-  Map<String, Integer> convertStringToMap(String mapAsString);
 
   /**
    * Envia um mapa vazio.
