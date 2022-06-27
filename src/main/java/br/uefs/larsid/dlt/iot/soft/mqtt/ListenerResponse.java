@@ -1,6 +1,8 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToMap;
+
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -61,7 +63,7 @@ public class ListenerResponse implements IMqttMessageListener {
 
           /* Adicionando o mapa de scores recebido no mapa geral, levando em 
           consideração o id da requisição. */
-          fogMap.putAll(controllerImpl.convertStringToMap(messageContent));
+          fogMap.putAll(ConvertStringToMap.convertStringToMap(messageContent));
           controllerImpl.putScores(params[1], fogMap);
 
           printlnDebug(

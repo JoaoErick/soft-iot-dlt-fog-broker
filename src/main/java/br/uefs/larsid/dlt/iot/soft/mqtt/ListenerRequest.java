@@ -3,6 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.mqtt;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +142,11 @@ public class ListenerRequest implements IMqttMessageListener {
            * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
            * atribuindo-o à carga de mensagem do MQTT
            */
-          Map<String, Integer> topK = this.controllerImpl.sortTopK(scores, k);
+          Map<String, Integer> topK = SortTopK.sortTopK(
+            scores,
+            k,
+            debugModeValue
+          );
 
           if (k > scores.size()) {
             printlnDebug("Invalid Top-K!");
