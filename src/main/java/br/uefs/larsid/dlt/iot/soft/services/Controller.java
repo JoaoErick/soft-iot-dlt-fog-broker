@@ -155,14 +155,14 @@ public interface Controller {
   /**
    * Adiciona os sensores em um JSON para enviar para a camada superior.
    *
-   * @param jsonReceived JSONObject - JSON contendo os tipos dos sensores.
+   * @param jsonReceived JsonObject - JSON contendo os tipos dos sensores.
    */
   public void putSensorsTypes(JsonObject jsonReceived);
 
   /**
    * Retorna um JSON contendo os tipos de sensores disponíveis.
    *
-   * @return JSONObject
+   * @return JsonObject
    */
   public JsonObject getSensorsTypesJSON();
 }
