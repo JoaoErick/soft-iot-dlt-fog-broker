@@ -151,7 +151,7 @@ public class ListenerRequest implements IMqttMessageListener {
           );
 
           if (k > scores.size()) {
-            printlnDebug("Invalid Top-K!");
+            printlnDebug("Insufficient Top-K!");
 
             byte[] payload = String
               .format(

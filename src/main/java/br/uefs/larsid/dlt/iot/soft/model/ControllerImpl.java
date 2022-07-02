@@ -254,7 +254,7 @@ public class ControllerImpl implements Controller {
       int topkMapSize = this.topKScores.get(id).size();
 
       if (topkMapSize < k) {
-        printlnDebug("Invalid Top-K!");
+        printlnDebug("Insufficient Top-K!");
 
         this.sendInvalidTopKMessage(
             id,

@@ -83,7 +83,7 @@ public class ListenerResponse implements IMqttMessageListener {
 
         break;
       case INVALID_TOP_K:
-        printlnDebug("Invalid Top-K! - " + messageContent);
+        printlnDebug("Insufficient Top-K! - " + messageContent);
         break;
       case SENSORS_RES:
         JsonObject jsonResponse = new Gson().fromJson(messageContent, JsonObject.class);
