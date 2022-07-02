@@ -8,16 +8,18 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -49,7 +51,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
   private int timeoutInSeconds;
-  private JSONObject sensorsTypesJSON = new JSONObject();
+  private JsonObject sensorsTypesJSON = new JsonObject();
 
   public ControllerImpl() {}
 
@@ -361,44 +363,10 @@ public class ControllerImpl implements Controller {
    * @param jsonReceived JSONObject - JSON contendo os tipos dos sensores.
    */
   @Override
-  public void putSensorsTypes(JSONObject jsonReceived) {
-    if (sensorsTypesJSON.getJSONArray("sensors").length() == 0) {
+  public void putSensorsTypes(JsonObject jsonReceived) {
+    if(this.sensorsTypesJSON.get("sensors").getAsString().equals("[]")) {
       sensorsTypesJSON = jsonReceived;
-    } else {
-      JSONArray sensorsTypesJSONArray = sensorsTypesJSON.getJSONArray(
-        "sensors"
-      );
-      JSONArray receivedJSONArray = jsonReceived.getJSONArray("sensors");
-
-      if (
-        !sensorsTypesJSONArray
-          .toString()
-          .equals(receivedJSONArray.toString()) ||
-        receivedJSONArray.length() > 0
-      ) {
-        String[] sensorsTypesArray = new String[sensorsTypesJSONArray.length()];
-        String[] receivedArray = new String[receivedJSONArray.length()];
-
-        for (int i = 0; i < sensorsTypesJSONArray.length(); i++) {
-          sensorsTypesArray[i] = sensorsTypesJSONArray.getString(i);
-        }
-
-        for (int i = 0; i < receivedJSONArray.length(); i++) {
-          receivedArray[i] = receivedJSONArray.getString(i);
-        }
-
-        String[] result = Stream
-          .concat( // combine
-            Stream.of(sensorsTypesArray),
-            Stream.of(receivedArray)
-          )
-          .distinct() // filter duplicates
-          .sorted() // sort
-          .toArray(String[]::new);
-
-        sensorsTypesJSON.put("sensors", new JSONArray(result));
-      }
-    }
+    } 
   }
 
   /**
@@ -636,10 +604,10 @@ public class ControllerImpl implements Controller {
   /**
    * Retorna um JSON contendo os tipos de sensores disponíveis.
    *
-   * @return JSONObject
+   * @return JsonObject
    */
   @Override
-  public JSONObject getSensorsTypesJSON() {
+  public JsonObject getSensorsTypesJSON() {
     return sensorsTypesJSON;
   }
 }

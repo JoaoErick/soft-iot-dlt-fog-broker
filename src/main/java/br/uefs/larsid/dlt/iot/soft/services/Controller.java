@@ -3,7 +3,8 @@ package br.uefs.larsid.dlt.iot.soft.services;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
+
+import com.google.gson.JsonObject;
 
 public interface Controller {
   /**
@@ -156,12 +157,12 @@ public interface Controller {
    *
    * @param jsonReceived JSONObject - JSON contendo os tipos dos sensores.
    */
-  public void putSensorsTypes(JSONObject jsonReceived);
+  public void putSensorsTypes(JsonObject jsonReceived);
 
   /**
    * Retorna um JSON contendo os tipos de sensores disponíveis.
    *
    * @return JSONObject
    */
-  public JSONObject getSensorsTypesJSON();
+  public JsonObject getSensorsTypesJSON();
 }

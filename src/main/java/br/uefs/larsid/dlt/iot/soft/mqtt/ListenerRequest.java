@@ -1,16 +1,18 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
-import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
+
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
+
+import com.google.gson.Gson;
 
 public class ListenerRequest implements IMqttMessageListener {
 
@@ -185,13 +187,17 @@ public class ListenerRequest implements IMqttMessageListener {
              * Caso existam dispositivos conectados ao próprio nó.
              */
             if (this.controllerImpl.getDevices().size() > 0) {
-              JSONObject json = loadSensorsTypes();
+              JsonObject json = new JsonObject();
+              String deviceListJson = new Gson().toJson(this.loadSensorsTypes());
+
+              json.addProperty("sensors", deviceListJson);
+
               byte[] payload = json.toString().getBytes();
 
               MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
             } else {
               this.controllerImpl.getSensorsTypesJSON()
-                .put("sensors", new JSONArray());
+                .addProperty("sensors", "[]");
 
               /* Criando uma nova chave, no mapa de requisições */
               this.controllerImpl.addResponse("getSensors");
@@ -232,7 +238,11 @@ public class ListenerRequest implements IMqttMessageListener {
              */
             this.controllerImpl.loadConnectedDevices();
 
-            JSONObject json = loadSensorsTypes();
+            JsonObject json = new JsonObject();
+            String deviceListJson = new Gson().toJson(this.loadSensorsTypes());
+
+            json.addProperty("sensors", deviceListJson);
+            
             payload = json.toString().getBytes();
 
             MQTTClientUp.publish(SENSORS_RES, payload, 1);
@@ -283,31 +293,16 @@ public class ListenerRequest implements IMqttMessageListener {
   /**
    * Requisita os tipos de sensores de um dispositivo conectado.
    *
-   * @return JSONObject
+   * @return List<String>
    */
-  private JSONObject loadSensorsTypes() {
-    JSONObject json = new JSONObject();
-    JSONArray jsonArray = sensorsToJsonArray(this.controllerImpl.getDevices());
+  private List<String> loadSensorsTypes() {
+    List<String> sensorsList = new ArrayList<>();
 
-    json.put("sensors", jsonArray);
-
-    return json;
-  }
-
-  /**
-   * Transforma a lista de sensores de um dispositivo em um JSONArray.
-   *
-   * @param devices List<Device> - Lista de dispositivos.
-   * @return JSONArray
-   */
-  private JSONArray sensorsToJsonArray(List<Device> devices) {
-    JSONArray jsonArray = new JSONArray();
-
-    for (Sensor sensor : devices.get(0).getSensors()) {
-      jsonArray.put(sensor.getType());
+    for (Sensor sensor : this.controllerImpl.getDevices().get(0).getSensors()) {
+      sensorsList.add(sensor.getType());
     }
 
-    return jsonArray;
+    return sensorsList;
   }
 
   private void printlnDebug(String str) {

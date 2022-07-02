@@ -6,7 +6,9 @@ import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToMap;
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.json.JSONObject;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 public class ListenerResponse implements IMqttMessageListener {
 
@@ -84,7 +86,8 @@ public class ListenerResponse implements IMqttMessageListener {
         printlnDebug("Invalid Top-K! - " + messageContent);
         break;
       case SENSORS_RES:
-        JSONObject jsonResponse = new JSONObject(messageContent);
+        JsonObject jsonResponse = new Gson().fromJson(messageContent, JsonObject.class);
+
         this.controllerImpl.putSensorsTypes(jsonResponse);
 
         printlnDebug("Sensors response received and add to the map");
