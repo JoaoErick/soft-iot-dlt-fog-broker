@@ -1,11 +1,10 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
-import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +14,15 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class ListenerRequest implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
-  private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG";
   private static final String TOP_K = "TOP_K_HEALTH";
-  private static final String SENSORS_FOG = "SENSORS_FOG";
-  private static final String SENSORS = "SENSORS";
+  private static final String SENSORS = "SENSORS/";
   private static final String SENSORS_RES = "SENSORS_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/";
   private static final String TOP_K_FOG_RES = "TOP_K_HEALTH_FOG_RES/";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/";
   private static final String GET_SENSORS = "GET sensors";
+  private static final String GET_TOPK = "GET topk";
   private static final int QOS = 1;
   /*--------------------------------------------------------------------------*/
 
@@ -75,46 +73,57 @@ public class ListenerRequest implements IMqttMessageListener {
   public void messageArrived(String topic, MqttMessage message)
     throws Exception {
     /* params = [topic, id] */
-    final String[] params = topic.split("/");
     final String mqttMessage = new String(message.getPayload());
     int k;
+    String id;
+    JsonArray functionHealth;
 
-    switch (params[0]) {
-      case TOP_K_FOG:
-        k = Integer.valueOf(mqttMessage);
+    switch (topic) {
+      case GET_TOPK:
+        JsonObject jsonGetTopK = new Gson()
+        .fromJson(mqttMessage, JsonObject.class);
+
+        id = jsonGetTopK.get("id").getAsString();
+        k = jsonGetTopK.get("k").getAsInt();
+        functionHealth = jsonGetTopK.get("functionHealth").getAsJsonArray();
+
         if (k == 0) {
           printlnDebug("Top-K = 0");
 
-          this.controllerImpl.sendEmptyTopK(params[1]);
+          this.controllerImpl.sendEmptyTopK(id);
         } else {
           Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
 
-          this.controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+          this.controllerImpl.getTopKScores().put(id, scoreMapEmpty);
 
           if (controllerImpl.hasNodes()) {
             printlnDebug("==== Cloud gateway -> Fog gateway  ====");
 
             /* Criando uma nova chave, no mapa de requisições */
-            this.controllerImpl.addResponse(params[1]);
+            this.controllerImpl.addResponse(id);
 
             byte[] messageDown = message.getPayload();
 
-            String topicDown = String.format("%s/%s", TOP_K, params[1]);
-
-            this.publishToDown(topicDown, messageDown);
+            this.publishToDown(TOP_K, messageDown);
           }
 
           /* Aguarda as respostas dos nós da camada inferior conectados a ele;
            * e publica para a camada superior o Top-K resultante.
            */
-          this.controllerImpl.publishTopK(params[1], k);
+          this.controllerImpl.publishTopK(id, k, functionHealth);
         }
 
         break;
       case TOP_K:
-        k = Integer.valueOf(mqttMessage);
         printlnDebug("==== Fog gateway -> Bottom gateway  ====");
         printlnDebug("Calculating scores from devices...");
+
+        JsonObject jsonGetTopKDown = new Gson()
+        .fromJson(mqttMessage, JsonObject.class);
+
+        id = jsonGetTopKDown.get("id").getAsString();
+        k = jsonGetTopKDown.get("k").getAsInt();
+        functionHealth = jsonGetTopKDown.get("functionHealth").getAsJsonArray();
 
         Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
@@ -132,9 +141,9 @@ public class ListenerRequest implements IMqttMessageListener {
 
           byte[] payload = scores.toString().getBytes();
 
-          MQTTClientUp.publish(TOP_K_FOG_RES + params[1], payload, 1);
+          MQTTClientUp.publish(TOP_K_FOG_RES + id, payload, 1);
         } else {
-          scores = this.controllerImpl.calculateScores();
+          scores = this.controllerImpl.calculateScores(functionHealth);
 
           /*
            * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
@@ -157,7 +166,7 @@ public class ListenerRequest implements IMqttMessageListener {
               )
               .getBytes();
 
-            MQTTClientUp.publish(INVALID_TOP_K + params[1], payload, 1);
+            MQTTClientUp.publish(INVALID_TOP_K + id, payload, 1);
           }
 
           printlnDebug("TOP_K => " + topK.toString());
@@ -165,61 +174,49 @@ public class ListenerRequest implements IMqttMessageListener {
 
           byte[] payload = topK.toString().getBytes();
 
-          MQTTClientUp.publish(TOP_K_RES + params[1], payload, 1);
+          MQTTClientUp.publish(TOP_K_RES + id, payload, 1);
         }
 
         break;
-      case SENSORS_FOG:
-        switch (mqttMessage) {
-          case GET_SENSORS:
-            printlnDebug("==== Cloud gateway -> Fog gateway  ====");
+      case GET_SENSORS:
+        printlnDebug("==== Cloud gateway -> Fog gateway  ====");
 
-            /**
-             * Requisitando os dispositivos que estão conectados ao próprio nó.
-             */
-            this.controllerImpl.loadConnectedDevices();
+        /**
+         * Requisitando os dispositivos que estão conectados ao próprio nó.
+         */
+        this.controllerImpl.loadConnectedDevices();
 
-            /**
-             * Caso existam dispositivos conectados ao próprio nó.
-             */
-            if (this.controllerImpl.getDevices().size() > 0) {
-              JsonObject json = new JsonObject();
-              String deviceListJson = new Gson()
-              .toJson(this.loadSensorsTypes());
+        /**
+         * Caso existam dispositivos conectados ao próprio nó.
+         */
+        if (this.controllerImpl.getDevices().size() > 0) {
+          JsonObject jsonGetSensors = new JsonObject();
+          String deviceListJson = new Gson()
+          .toJson(this.controllerImpl.loadSensorsTypes());
 
-              json.addProperty("sensors", deviceListJson);
+          jsonGetSensors.addProperty("sensors", deviceListJson);
 
-              byte[] payload = json.toString().replace("\\", "").getBytes();
+          byte[] payload = jsonGetSensors
+            .toString()
+            .replace("\\", "")
+            .getBytes();
 
-              MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
-            } else {
-              this.controllerImpl.getSensorsTypesJSON()
-                .addProperty("sensors", "[]");
+          MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
+        } else {
+          this.controllerImpl.getSensorsTypesJSON()
+            .addProperty("sensors", "[]");
 
-              /* Criando uma nova chave, no mapa de requisições */
-              this.controllerImpl.addResponse("getSensors");
+          /* Criando uma nova chave, no mapa de requisições */
+          this.controllerImpl.addResponse("getSensors");
 
-              byte[] messageDown = message.getPayload();
+          byte[] messageDown = "".getBytes();
 
-              this.publishToDown(SENSORS + "/", messageDown);
+          this.publishToDown(SENSORS, topic.getBytes());
 
-              /* Aguarda as respostas dos nós da camada inferior conectados a
-               * ele; e publica para a camada superior.
-               */
-              this.controllerImpl.publishSensorType();
-            }
-
-            break;
-          default:
-            String responseMessage = String.format(
-              "\nOops! the request isn't recognized...\nTry one of the options below:\n- %s\n",
-              GET_SENSORS
-            );
-            byte[] payload = responseMessage.getBytes();
-
-            MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
-
-            break;
+          /* Aguarda as respostas dos nós da camada inferior conectados a
+           * ele; e publica para a camada superior.
+           */
+          this.controllerImpl.publishSensorType();
         }
 
         break;
@@ -235,27 +232,37 @@ public class ListenerRequest implements IMqttMessageListener {
              */
             this.controllerImpl.loadConnectedDevices();
 
-            JsonObject json = new JsonObject();
-            String deviceListJson = new Gson().toJson(this.loadSensorsTypes());
+            JsonObject jsonGetSensors = new JsonObject();
+            String deviceListJson = new Gson()
+            .toJson(this.controllerImpl.loadSensorsTypes());
 
-            json.addProperty("sensors", deviceListJson);
+            jsonGetSensors.addProperty("sensors", deviceListJson);
 
-            payload = json.toString().getBytes();
+            payload = jsonGetSensors.toString().getBytes();
 
             MQTTClientUp.publish(SENSORS_RES, payload, 1);
 
             break;
           default:
-            String responseMessage = String.format(
+            String responseMessageSensors = String.format(
               "\nOops! the request isn't recognized...\nTry one of the options below:\n- %s\n",
               GET_SENSORS
             );
-            payload = responseMessage.getBytes();
+            payload = responseMessageSensors.getBytes();
 
             MQTTClientUp.publish(SENSORS_RES, payload, 1);
 
             break;
         }
+        break;
+      default:
+        String responseMessage = String.format(
+          "\nOops! the request isn't recognized...\nTry one of the options below:\n- %s\n",
+          GET_SENSORS
+        );
+
+        MQTTClientUp.publish(SENSORS_FOG_RES, responseMessage.getBytes(), 1);
+
         break;
     }
   }
@@ -285,21 +292,6 @@ public class ListenerRequest implements IMqttMessageListener {
       MQTTClientDown.publish(topicDown, messageDown, QOS);
       MQTTClientDown.disconnect();
     }
-  }
-
-  /**
-   * Requisita os tipos de sensores de um dispositivo conectado.
-   *
-   * @return List<String>
-   */
-  private List<String> loadSensorsTypes() {
-    List<String> sensorsList = new ArrayList<>();
-
-    for (Sensor sensor : this.controllerImpl.getDevices().get(0).getSensors()) {
-      sensorsList.add(sensor.getType());
-    }
-
-    return sensorsList;
   }
 
   private void printlnDebug(String str) {
