@@ -1,10 +1,10 @@
 package br.uefs.larsid.dlt.iot.soft.services;
 
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.util.List;
 import java.util.Map;
-
-import com.google.gson.JsonObject;
 
 public interface Controller {
   /**
@@ -12,15 +12,17 @@ public interface Controller {
    *
    * @return Map
    */
-  Map<String, Integer> calculateScores();
+  Map<String, Integer> calculateScores(JsonArray functionHealth);
 
   /**
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
    * @param k int - Quantidade de scores requisitados.
+   * @param functionHealth JsonArray - Array contendo a função de cálculo do
+   * Top-K.
    */
-  void publishTopK(String id, int k);
+  void publishTopK(String id, int k, JsonArray functionHealth);
 
   /**
    * Retorna o mapa de scores de acordo com o id da requisição
@@ -165,4 +167,11 @@ public interface Controller {
    * @return JsonObject
    */
   public JsonObject getSensorsTypesJSON();
+
+  /**
+   * Requisita os tipos de sensores de um dispositivo conectado.
+   *
+   * @return List<String>
+   */
+  public List<String> loadSensorsTypes();
 }
