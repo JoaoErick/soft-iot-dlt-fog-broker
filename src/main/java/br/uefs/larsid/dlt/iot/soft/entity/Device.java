@@ -15,7 +15,7 @@ public class Device {
   public Device() {}
 
   /**
-   * Retorna um sensor pelo id do mesmo. 
+   * Retorna um sensor pelo id do mesmo.
    *
    * @param sensorId String - Id do sensor.
    * @return Sensor
@@ -23,6 +23,19 @@ public class Device {
   public Sensor getSensorBySensorId(String sensorId) {
     for (Sensor sensor : sensors) {
       if (sensor.getId().contentEquals(sensorId)) return sensor;
+    }
+    return null;
+  }
+
+  /**
+   * Retorna um sensor pelo tipo do mesmo.
+   * 
+   * @param sensorType String - Tipo do sensor.
+   * @return Sensor.
+   */
+  public Sensor getSensorBySensorType(String sensorType) {
+    for (Sensor sensor : sensors) {
+      if (sensor.getType().contentEquals(sensorType)) return sensor;
     }
     return null;
   }
