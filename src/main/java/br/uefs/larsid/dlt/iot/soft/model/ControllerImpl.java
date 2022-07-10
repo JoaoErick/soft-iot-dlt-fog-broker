@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,9 +28,10 @@ public class ControllerImpl implements Controller {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
-  private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
+  // private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
+  private static final String TOP_K_FOG = "GET topk";
   private static final String TOP_K = "TOP_K_HEALTH/#";
-  private static final String SENSORS_FOG = "SENSORS_FOG/";
+  private static final String SENSORS_FOG = "GET sensors";
   private static final String SENSORS = "SENSORS/";
   private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
@@ -182,12 +184,12 @@ public class ControllerImpl implements Controller {
       }
     } catch (JsonParseException e) {
       e.printStackTrace();
-      System.out.println(
+      printlnDebug(
         "Verify the correct format of 'DevicesConnected' property in configuration file."
       );
     } catch (JsonMappingException e) {
       e.printStackTrace();
-      System.out.println(
+      printlnDebug(
         "Verify the correct format of 'DevicesConnected' property in configuration file."
       );
     } catch (IOException e) {
@@ -205,15 +207,51 @@ public class ControllerImpl implements Controller {
    * @return Map
    */
   @Override
-  public Map<String, Integer> calculateScores() {
+  public Map<String, Integer> calculateScores(JsonArray functionHealth) {
     Map<String, Integer> temp = new LinkedHashMap<String, Integer>();
+    List<String> sensorsTypes = this.loadSensorsTypes();
 
-    for (Device device : this.devices) {
-      // TODO: Implementar função para cálculo do score.
-      Random random = new Random();
-      int score = random.nextInt(51);
+    if (sensorsTypes.size() == functionHealth.size()) {
+      for (int i = 0; i < functionHealth.size(); i++) {
+        String sensorType = functionHealth
+          .get(i)
+          .getAsJsonObject()
+          .get("sensor")
+          .getAsString();
 
-      temp.put(device.getId(), score);
+        /**
+         * Caso o tipo de sensor especificado não exista nos dispositivos,
+         * retorna um Map vazio.
+         */
+        if (!sensorsTypes.contains(sensorType)) {
+          return new LinkedHashMap<String, Integer>();
+        }
+      }
+
+      for (Device device : this.devices) {
+        int score = 0;
+        int sumWeight = 0;
+
+        for (int i = 0; i < functionHealth.size(); i++) {
+          String sensorType = functionHealth
+            .get(i)
+            .getAsJsonObject()
+            .get("sensor")
+            .getAsString();
+          int weight = functionHealth
+            .get(i)
+            .getAsJsonObject()
+            .get("weight")
+            .getAsInt();
+
+          Sensor sensor = device.getSensorBySensorType(sensorType);
+          sensor.getValue(device.getId());
+          score += sensor.getValue() * weight;
+          sumWeight += weight;
+        }
+
+        temp.put(device.getId(), score / sumWeight);
+      }
     }
 
     return temp;
@@ -224,9 +262,11 @@ public class ControllerImpl implements Controller {
    *
    * @param id String - Id da requisição.
    * @param k  int - Quantidade de scores requisitados.
+   * @param functionHealth JsonArray - Array contendo a função de cálculo do
+   * Top-K.
    */
   @Override
-  public void publishTopK(String id, int k) {
+  public void publishTopK(String id, int k, JsonArray functionHealth) {
     printlnDebug("Waiting for Gateway nodes to send their Top-K");
 
     long start = System.currentTimeMillis();
@@ -251,7 +291,7 @@ public class ControllerImpl implements Controller {
 
     if (!this.devices.isEmpty()) {
       /* Adicionando os dispositivos conectados em si mesmo. */
-      this.putScores(id, this.calculateScores());
+      this.putScores(id, this.calculateScores(functionHealth));
 
       int topkMapSize = this.topKScores.get(id).size();
 
@@ -319,11 +359,26 @@ public class ControllerImpl implements Controller {
       System.currentTimeMillis() < end
     ) {}
 
-    byte[] payload = sensorsTypesJSON.toString().getBytes();
+    byte[] payload = sensorsTypesJSON.toString().replace("\\", "").getBytes();
 
     MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
 
     this.removeSpecificResponse("getSensors");
+  }
+
+  /**
+   * Requisita os tipos de sensores de um dispositivo conectado.
+   *
+   * @return List<String>
+   */
+  public List<String> loadSensorsTypes() {
+    List<String> sensorsList = new ArrayList<>();
+
+    for (Sensor sensor : this.getDevices().get(0).getSensors()) {
+      sensorsList.add(sensor.getType());
+    }
+
+    return sensorsList;
   }
 
   /**
