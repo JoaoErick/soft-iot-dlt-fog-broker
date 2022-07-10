@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,11 +27,10 @@ public class ControllerImpl implements Controller {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final int QOS = 1;
-  // private static final String TOP_K_FOG = "TOP_K_HEALTH_FOG/#";
   private static final String TOP_K_FOG = "GET topk";
   private static final String TOP_K = "TOP_K_HEALTH/#";
   private static final String SENSORS_FOG = "GET sensors";
-  private static final String SENSORS = "SENSORS/";
+  private static final String SENSORS = "SENSORS";
   private static final String TOP_K_RES_FOG = "TOP_K_HEALTH_FOG_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
   private static final String SENSORS_RES = "SENSORS_RES/";
