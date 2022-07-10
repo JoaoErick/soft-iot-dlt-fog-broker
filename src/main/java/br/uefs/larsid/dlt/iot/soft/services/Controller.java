@@ -1,6 +1,8 @@
 package br.uefs.larsid.dlt.iot.soft.services;
 
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.util.List;
 import java.util.Map;
 
@@ -10,28 +12,17 @@ public interface Controller {
    *
    * @return Map
    */
-  Map<String, Integer> calculateScores();
-
-  /**
-   * Calcula o Top-K.
-   *
-   * @param devicesAndScoresMap Map - Mapa de Top-K
-   * @param k int - Quantidade de scores requisitados.
-   * @return Map
-   *
-   */
-  Map<String, Integer> sortTopK(
-    Map<String, Integer> devicesAndScoresMap,
-    int k
-  );
+  Map<String, Integer> calculateScores(JsonArray functionHealth);
 
   /**
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
    * @param k int - Quantidade de scores requisitados.
+   * @param functionHealth JsonArray - Array contendo a função de cálculo do
+   * Top-K.
    */
-  void publishTopK(String id, int k);
+  void publishTopK(String id, int k, JsonArray functionHealth);
 
   /**
    * Retorna o mapa de scores de acordo com o id da requisição
@@ -60,14 +51,6 @@ public interface Controller {
    * @return Map
    */
   Map<String, Map<String, Integer>> getTopKScores();
-
-  /**
-   * Converte uma String em um Map.
-   *
-   * @param mapAsString String - String que deseja converter.
-   * @return Map
-   */
-  Map<String, Integer> convertStringToMap(String mapAsString);
 
   /**
    * Envia um mapa vazio.
@@ -164,5 +147,31 @@ public interface Controller {
   /**
    * Exibe a URI dos nós que estão conectados.
    */
-  public void showNodesConnected() ;
+  public void showNodesConnected();
+
+  /**
+   * Publica os tipos de sensores para a camada de cima.
+   */
+  public void publishSensorType();
+
+  /**
+   * Adiciona os sensores em um JSON para enviar para a camada superior.
+   *
+   * @param jsonReceived JsonObject - JSON contendo os tipos dos sensores.
+   */
+  public void putSensorsTypes(JsonObject jsonReceived);
+
+  /**
+   * Retorna um JSON contendo os tipos de sensores disponíveis.
+   *
+   * @return JsonObject
+   */
+  public JsonObject getSensorsTypesJSON();
+
+  /**
+   * Requisita os tipos de sensores de um dispositivo conectado.
+   *
+   * @return List<String>
+   */
+  public List<String> loadSensorsTypes();
 }

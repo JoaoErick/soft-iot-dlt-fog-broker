@@ -1,15 +1,21 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToMap;
+
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-public class Listener implements IMqttMessageListener {
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+public class ListenerResponse implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES";
   private static final String INVALID_TOP_K = "INVALID_TOP_K";
+  private static final String SENSORS_RES = "SENSORS_RES";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -21,14 +27,14 @@ public class Listener implements IMqttMessageListener {
    *
    * @param controllerImpl Controller - Controller que fará uso desse Listener.
    * @param MQTTClientHost MQTTClient - Cliente MQTT do gateway inferior.
-   * @param topic String - Tópico que será ouvido
+   * @param topics String[] - Tópicos que serão assinados.
    * @param qos int - Qualidade de serviço do tópico que será ouvido.
    * @param debugModeValue boolean - Modo para debugar o código.
    */
-  public Listener(
+  public ListenerResponse(
     Controller controllerImpl,
     MQTTClient MQTTClientHost,
-    String topic,
+    String[] topics,
     int qos,
     boolean debugModeValue
   ) {
@@ -36,7 +42,9 @@ public class Listener implements IMqttMessageListener {
     this.MQTTClientHost = MQTTClientHost;
     this.debugModeValue = debugModeValue;
 
-    this.MQTTClientHost.subscribe(qos, this, topic);
+    for (String topic : topics) {
+      this.MQTTClientHost.subscribe(qos, this, topic);
+    }
   }
 
   @Override
@@ -57,7 +65,7 @@ public class Listener implements IMqttMessageListener {
 
           /* Adicionando o mapa de scores recebido no mapa geral, levando em 
           consideração o id da requisição. */
-          fogMap.putAll(controllerImpl.convertStringToMap(messageContent));
+          fogMap.putAll(ConvertStringToMap.convertStringToMap(messageContent));
           controllerImpl.putScores(params[1], fogMap);
 
           printlnDebug(
@@ -75,7 +83,18 @@ public class Listener implements IMqttMessageListener {
 
         break;
       case INVALID_TOP_K:
-        printlnDebug("Invalid Top-K! - " + messageContent);
+        printlnDebug("Insufficient Top-K! - " + messageContent);
+        break;
+      case SENSORS_RES:
+        JsonObject jsonResponse = new Gson().fromJson(messageContent, JsonObject.class);
+
+        this.controllerImpl.putSensorsTypes(jsonResponse);
+
+        printlnDebug("Sensors response received and add to the map");
+
+        /* Adicionando nova requisição. */
+        this.controllerImpl.updateResponse("getSensors");
+
         break;
     }
   }

@@ -221,16 +221,16 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
     try {
       if (mqttClient.isConnected()) {
         mqttClient.publish(topic, payload, qos, retained);
-        System.out.println(
+        printlnDebug(
           String.format("Topic %s published. %dB", topic, payload.length)
         );
       } else {
-        System.out.println(
+        printlnDebug(
           "Client disconnected, could not publish topic " + topic
         );
       }
     } catch (MqttException ex) {
-      System.out.println("Error to publish " + topic + " - " + ex);
+      printlnDebug("Error to publish " + topic + " - " + ex);
     }
   }
 
