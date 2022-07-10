@@ -15,7 +15,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
   /*-------------------------Constantes---------------------------------------*/
   private static final String TOP_K = "TOP_K_HEALTH";
-  private static final String SENSORS = "SENSORS/";
+  private static final String SENSORS = "SENSORS";
   private static final String SENSORS_RES = "SENSORS_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/";
@@ -211,7 +211,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
           byte[] messageDown = "".getBytes();
 
-          this.publishToDown(SENSORS, topic.getBytes());
+          this.publishToDown(SENSORS, messageDown);
 
           /* Aguarda as respostas dos nós da camada inferior conectados a
            * ele; e publica para a camada superior.
@@ -223,37 +223,23 @@ public class ListenerRequest implements IMqttMessageListener {
       case SENSORS:
         byte[] payload;
 
-        switch (mqttMessage) {
-          case GET_SENSORS:
-            printlnDebug("==== Fog gateway -> Bottom gateway  ====");
+        printlnDebug("==== Fog gateway -> Bottom gateway  ====");
 
-            /**
-             * Requisitando os dispositivos que estão conectados ao próprio nó.
-             */
-            this.controllerImpl.loadConnectedDevices();
+        /**
+         * Requisitando os dispositivos que estão conectados ao próprio nó.
+         */
+        this.controllerImpl.loadConnectedDevices();
 
-            JsonObject jsonGetSensors = new JsonObject();
-            String deviceListJson = new Gson()
-            .toJson(this.controllerImpl.loadSensorsTypes());
+        JsonObject jsonGetSensors = new JsonObject();
+        String deviceListJson = new Gson()
+        .toJson(this.controllerImpl.loadSensorsTypes());
 
-            jsonGetSensors.addProperty("sensors", deviceListJson);
+        jsonGetSensors.addProperty("sensors", deviceListJson);
 
-            payload = jsonGetSensors.toString().getBytes();
+        payload = jsonGetSensors.toString().getBytes();
 
-            MQTTClientUp.publish(SENSORS_RES, payload, 1);
+        MQTTClientUp.publish(SENSORS_RES, payload, 1);
 
-            break;
-          default:
-            String responseMessageSensors = String.format(
-              "\nOops! the request isn't recognized...\nTry one of the options below:\n- %s\n",
-              GET_SENSORS
-            );
-            payload = responseMessageSensors.getBytes();
-
-            MQTTClientUp.publish(SENSORS_RES, payload, 1);
-
-            break;
-        }
         break;
       default:
         String responseMessage = String.format(
