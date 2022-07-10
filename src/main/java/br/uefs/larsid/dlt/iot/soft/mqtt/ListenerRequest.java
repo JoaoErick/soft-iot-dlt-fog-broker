@@ -3,16 +3,14 @@ package br.uefs.larsid.dlt.iot.soft.mqtt;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
-
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import com.google.gson.JsonObject;
-
-import com.google.gson.Gson;
 
 public class ListenerRequest implements IMqttMessageListener {
 
@@ -85,11 +83,9 @@ public class ListenerRequest implements IMqttMessageListener {
       case TOP_K_FOG:
         k = Integer.valueOf(mqttMessage);
         if (k == 0) {
-          if (controllerImpl.hasNodes()) {
-            printlnDebug("Top-K = 0");
+          printlnDebug("Top-K = 0");
 
-            this.controllerImpl.sendEmptyTopK(params[1]);
-          }
+          this.controllerImpl.sendEmptyTopK(params[1]);
         } else {
           if (controllerImpl.hasNodes()) {
             printlnDebug("==== Cloud gateway -> Fog gateway  ====");
@@ -188,7 +184,8 @@ public class ListenerRequest implements IMqttMessageListener {
              */
             if (this.controllerImpl.getDevices().size() > 0) {
               JsonObject json = new JsonObject();
-              String deviceListJson = new Gson().toJson(this.loadSensorsTypes());
+              String deviceListJson = new Gson()
+              .toJson(this.loadSensorsTypes());
 
               json.addProperty("sensors", deviceListJson);
 
@@ -242,7 +239,7 @@ public class ListenerRequest implements IMqttMessageListener {
             String deviceListJson = new Gson().toJson(this.loadSensorsTypes());
 
             json.addProperty("sensors", deviceListJson);
-            
+
             payload = json.toString().getBytes();
 
             MQTTClientUp.publish(SENSORS_RES, payload, 1);
