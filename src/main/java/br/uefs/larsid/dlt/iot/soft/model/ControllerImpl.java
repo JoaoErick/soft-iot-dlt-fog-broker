@@ -7,13 +7,13 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.MapToArray;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -232,14 +232,16 @@ public class ControllerImpl implements Controller {
     long start = System.currentTimeMillis();
     long end = start + this.timeoutInSeconds * 1000;
 
-    /*
-     * Enquanto a quantidade de respostas da requisição for menor que o número
-     * de nós filhos
-     */
-    while (
-      this.responseQueue.get(id) < this.nodesUris.size() &&
-      System.currentTimeMillis() < end
-    ) {}
+    if (this.hasNodes) {
+      /*
+       * Enquanto a quantidade de respostas da requisição for menor que o número
+       * de nós filhos
+       */
+      while (
+        this.responseQueue.get(id) < this.nodesUris.size() &&
+        System.currentTimeMillis() < end
+      ) {}
+    }
 
     /*
      * Consumindo apiIot para pegar os valores mais atualizados dos
@@ -282,7 +284,15 @@ public class ControllerImpl implements Controller {
     printlnDebug("Top-K Result => " + topK.toString());
     printlnDebug("==== Fog gateway -> Cloud gateway  ====");
 
-    byte[] payload = topK.toString().getBytes();
+    JsonObject json = new JsonObject();
+    json.addProperty("id", id);
+    json.addProperty("timestamp", System.currentTimeMillis());
+
+    String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK));
+
+    json.addProperty("devices", deviceListJson);
+
+    byte[] payload = json.toString().replace("\\", "").getBytes();
 
     MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
 
@@ -364,9 +374,9 @@ public class ControllerImpl implements Controller {
    */
   @Override
   public void putSensorsTypes(JsonObject jsonReceived) {
-    if(this.sensorsTypesJSON.get("sensors").getAsString().equals("[]")) {
+    if (this.sensorsTypesJSON.get("sensors").getAsString().equals("[]")) {
       sensorsTypesJSON = jsonReceived;
-    } 
+    }
   }
 
   /**

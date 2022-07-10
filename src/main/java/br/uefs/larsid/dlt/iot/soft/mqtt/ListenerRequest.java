@@ -87,6 +87,10 @@ public class ListenerRequest implements IMqttMessageListener {
 
           this.controllerImpl.sendEmptyTopK(params[1]);
         } else {
+          Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
+
+          this.controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
+
           if (controllerImpl.hasNodes()) {
             printlnDebug("==== Cloud gateway -> Fog gateway  ====");
 
@@ -98,16 +102,12 @@ public class ListenerRequest implements IMqttMessageListener {
             String topicDown = String.format("%s/%s", TOP_K, params[1]);
 
             this.publishToDown(topicDown, messageDown);
-
-            Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
-
-            this.controllerImpl.getTopKScores().put(params[1], scoreMapEmpty);
-
-            /* Aguarda as respostas dos nós da camada inferior conectados a ele;
-             * e publica para a camada superior o Top-K resultante.
-             */
-            this.controllerImpl.publishTopK(params[1], k);
           }
+
+          /* Aguarda as respostas dos nós da camada inferior conectados a ele;
+           * e publica para a camada superior o Top-K resultante.
+           */
+          this.controllerImpl.publishTopK(params[1], k);
         }
 
         break;
@@ -189,7 +189,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
               json.addProperty("sensors", deviceListJson);
 
-              byte[] payload = json.toString().getBytes();
+              byte[] payload = json.toString().replace("\\", "").getBytes();
 
               MQTTClientUp.publish(SENSORS_FOG_RES, payload, 1);
             } else {
