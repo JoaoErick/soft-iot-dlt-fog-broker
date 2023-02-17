@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.logging.Logger;
 
 public class ControllerImpl implements Controller {
 
@@ -589,8 +590,10 @@ public class ControllerImpl implements Controller {
   }
 
   private void printlnDebug(String str) {
+    Logger log = Logger.getLogger(ControllerImpl.class.getName());
+
     if (debugModeValue) {
-      System.out.println(str);
+      log.info(str);
     }
   }
 

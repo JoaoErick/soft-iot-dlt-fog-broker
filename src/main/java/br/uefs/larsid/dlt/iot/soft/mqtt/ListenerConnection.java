@@ -3,6 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.mqtt;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import java.util.logging.Logger;
 
 public class ListenerConnection implements IMqttMessageListener {
 
@@ -62,8 +63,10 @@ public class ListenerConnection implements IMqttMessageListener {
   }
 
   private void printlnDebug(String str) {
+    Logger log = Logger.getLogger(ListenerConnection.class.getName());
+
     if (isDebugModeValue()) {
-      System.out.println(str);
+      log.info(str);
     }
   }
 

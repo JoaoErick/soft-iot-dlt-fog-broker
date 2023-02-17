@@ -11,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import java.util.logging.Logger;
 
 public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
@@ -260,8 +261,10 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   }
 
   private void printlnDebug(String str) {
+    Logger log = Logger.getLogger(MQTTClient.class.getName());
+
     if (debugModeValue) {
-      System.out.println(str);
+      log.info(str);
     }
   }
 

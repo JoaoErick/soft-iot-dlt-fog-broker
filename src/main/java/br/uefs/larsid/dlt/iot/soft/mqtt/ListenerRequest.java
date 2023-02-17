@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import java.util.logging.Logger;
 
 public class ListenerRequest implements IMqttMessageListener {
 
@@ -281,8 +282,10 @@ public class ListenerRequest implements IMqttMessageListener {
   }
 
   private void printlnDebug(String str) {
+    Logger log = Logger.getLogger(ListenerRequest.class.getName());
+
     if (debugModeValue) {
-      System.out.println(str);
+      log.info(str);
     }
   }
 }

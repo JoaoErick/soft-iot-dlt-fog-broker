@@ -4,6 +4,7 @@ import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToMap;
 
 import java.util.Map;
+import java.util.logging.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -100,8 +101,10 @@ public class ListenerResponse implements IMqttMessageListener {
   }
 
   private void printlnDebug(String str) {
+    Logger log = Logger.getLogger(ListenerResponse.class.getName());
+
     if (isDebugModeValue()) {
-      System.out.println(str);
+      log.info(str);
     }
   }
 

@@ -3,6 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.utils;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class SortTopK {
 
@@ -28,8 +29,10 @@ public class SortTopK {
       .toArray();
 
     if (debugModeValue) {
+      Logger log = Logger.getLogger(SortTopK.class.getName());
+
       for (Object e : temp) {
-        System.out.println(
+        log.info(
           ((Map.Entry<String, Integer>) e).getKey() +
           " : " +
           ((Map.Entry<String, Integer>) e).getValue()
