@@ -6,10 +6,13 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientIotService {
 
   private static int HTTP_SUCCESS = 200;
+  private static final Logger logger = Logger.getLogger(ClientIotService.class.getName());
 
   /**
    * Solicita os dispositivos que estão conectados através da API.
@@ -43,9 +46,9 @@ public class ClientIotService {
 
       return devicesJson;
     } catch (MalformedURLException e) {
-      e.printStackTrace();
+      logger.log(Level.SEVERE, null, e);
     } catch (IOException e) {
-      e.printStackTrace();
+      logger.log(Level.SEVERE, null, e);
     }
 
     return null;

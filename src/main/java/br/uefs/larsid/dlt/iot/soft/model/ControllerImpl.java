@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ControllerImpl implements Controller {
@@ -53,6 +55,7 @@ public class ControllerImpl implements Controller {
   private List<String> nodesUris;
   private int timeoutInSeconds;
   private JsonObject sensorsTypesJSON = new JsonObject();
+  private static final Logger logger = Logger.getLogger(ControllerImpl.class.getName());
 
   public ControllerImpl() {}
 
@@ -182,17 +185,17 @@ public class ControllerImpl implements Controller {
         device.setSensors(tempSensors);
       }
     } catch (JsonParseException e) {
-      e.printStackTrace();
       printlnDebug(
         "Verify the correct format of 'DevicesConnected' property in configuration file."
       );
+      logger.log(Level.SEVERE, null, e);
     } catch (JsonMappingException e) {
-      e.printStackTrace();
       printlnDebug(
         "Verify the correct format of 'DevicesConnected' property in configuration file."
       );
+      logger.log(Level.SEVERE, null, e);
     } catch (IOException e) {
-      e.printStackTrace();
+      logger.log(Level.SEVERE, null, e);
     }
 
     this.devices = devicesTemp;
@@ -590,10 +593,8 @@ public class ControllerImpl implements Controller {
   }
 
   private void printlnDebug(String str) {
-    Logger log = Logger.getLogger(ControllerImpl.class.getName());
-
     if (debugModeValue) {
-      log.info(str);
+      logger.info(str);
     }
   }
 

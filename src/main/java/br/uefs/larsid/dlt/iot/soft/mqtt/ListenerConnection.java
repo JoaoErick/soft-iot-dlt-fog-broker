@@ -15,6 +15,7 @@ public class ListenerConnection implements IMqttMessageListener {
   private boolean debugModeValue;
   private Controller controllerImpl;
   private MQTTClient MQTTClientHost;
+  private static final Logger logger = Logger.getLogger(ListenerConnection.class.getName());
 
   /**
    * Método Construtor.
@@ -63,10 +64,8 @@ public class ListenerConnection implements IMqttMessageListener {
   }
 
   private void printlnDebug(String str) {
-    Logger log = Logger.getLogger(ListenerConnection.class.getName());
-
     if (isDebugModeValue()) {
-      log.info(str);
+      logger.info(str);
     }
   }
 

@@ -7,6 +7,8 @@ import java.util.logging.Logger;
 
 public class SortTopK {
 
+  private static final Logger logger = Logger.getLogger(SortTopK.class.getName());
+
   /**
    * Ordena o mapa contendo os scores dos dispositivos.
    *
@@ -29,10 +31,8 @@ public class SortTopK {
       .toArray();
 
     if (debugModeValue) {
-      Logger log = Logger.getLogger(SortTopK.class.getName());
-
       for (Object e : temp) {
-        log.info(
+        logger.info(
           ((Map.Entry<String, Integer>) e).getKey() +
           " : " +
           ((Map.Entry<String, Integer>) e).getValue()

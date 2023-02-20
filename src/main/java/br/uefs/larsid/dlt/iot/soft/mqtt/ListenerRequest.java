@@ -32,6 +32,7 @@ public class ListenerRequest implements IMqttMessageListener {
   private MQTTClient MQTTClientHost;
   private List<String> nodesUris;
   private Controller controllerImpl;
+  private static final Logger logger = Logger.getLogger(ListenerRequest.class.getName());
 
   /**
    * Método construtor.
@@ -282,10 +283,8 @@ public class ListenerRequest implements IMqttMessageListener {
   }
 
   private void printlnDebug(String str) {
-    Logger log = Logger.getLogger(ListenerRequest.class.getName());
-
     if (debugModeValue) {
-      log.info(str);
+      logger.info(str);
     }
   }
 }

@@ -28,6 +28,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   private MqttClient mqttClient;
   private MqttConnectOptions mqttOptions;
   private boolean debugModeValue;
+  private static final Logger logger = Logger.getLogger(MQTTClient.class.getName());
 
   public MQTTClient() {}
 
@@ -261,10 +262,8 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
   }
 
   private void printlnDebug(String str) {
-    Logger log = Logger.getLogger(MQTTClient.class.getName());
-
     if (debugModeValue) {
-      log.info(str);
+      logger.info(str);
     }
   }
 
