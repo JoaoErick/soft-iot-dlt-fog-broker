@@ -8,11 +8,24 @@ import java.util.Map;
 
 public interface Controller {
   /**
+   * Calcula o score apenas dos dispositivos conectados passados por parâmetro.
+   *
+   * @return Map
+   */
+  Map<String, Integer> calculateScoresAuths(JsonArray functionHealth);
+
+  /**
    * Calcula o score dos dispositivos conectados.
    *
    * @return Map
    */
   Map<String, Integer> calculateScores(JsonArray functionHealth);
+
+  /**
+   * Publica uma solicitação para verificar os dispositivos que estão 
+   * devidamente autenticados.
+   */
+  void publishDeviceIdsAuths();
 
   /**
    * Publica o Top-K calculado para a camada de cima.
@@ -82,6 +95,19 @@ public interface Controller {
    * @return String
    */
   int getNodes();
+
+  /**
+   * Retorna a lista de dispositivos conectados autenticados.
+   *
+   * @return String
+   */
+  List<String> getDeviceIdsAuths();
+
+  /**
+   * Altera a lista de dispositivos conectados autenticados
+   * @param deviceIdsAuths
+   */
+  void setDeviceIdsAuths(List<String> deviceIdsAuths);
 
   /**
    * Retorna a quantidade de nós conectados.

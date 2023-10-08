@@ -40,6 +40,7 @@ public class ControllerImpl implements Controller {
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
+  private static final String AUTHENTICATED_DEVICES = "AUTHENTICATED_DEVICES";
   private static final String CONNECT = "SYN";
   private static final String DISCONNECT = "FIN";
   /*--------------------------------------------------------------------------*/
@@ -51,6 +52,7 @@ public class ControllerImpl implements Controller {
   private String urlAPI;
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
+  private List<String> deviceIdsAuths;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private List<String> nodesUris;
   private int timeoutInSeconds;
@@ -204,6 +206,88 @@ public class ControllerImpl implements Controller {
   }
 
   /**
+   * Publica uma solicitação para verificar os dispositivos que estão 
+   * devidamente autenticados.
+   */
+  public void publishDeviceIdsAuths() {
+    printlnDebug("Waiting for the gateway to provide the list of authenticated devices");
+
+    MQTTClientHost.publish(AUTHENTICATED_DEVICES, "".getBytes(), QOS);
+
+    long start = System.currentTimeMillis();
+    long end = start + this.timeoutInSeconds * 1000;
+
+    /*
+      * Enquanto a lista de dispositivos autenticados não é recebida e o 
+      * tempo configurado não terminou.
+      */
+    while (
+      this.deviceIdsAuths.isEmpty() &&
+      System.currentTimeMillis() < end
+    ) {}
+  }
+
+  /**
+   * Calcula o score apenas dos dispositivos conectados passados por parâmetro.
+   *
+   * @return Map
+   */
+  @Override
+  public Map<String, Integer> calculateScoresAuths(JsonArray functionHealth) {
+    Map<String, Integer> temp = new LinkedHashMap<String, Integer>();
+    List<String> sensorsTypes = this.loadSensorsTypes();
+
+    if (sensorsTypes.size() == functionHealth.size()) {
+      for (int i = 0; i < functionHealth.size(); i++) {
+        String sensorType = functionHealth
+          .get(i)
+          .getAsJsonObject()
+          .get("sensor")
+          .getAsString();
+
+        /**
+         * Caso o tipo de sensor especificado não exista nos dispositivos,
+         * retorna um Map vazio.
+         */
+        if (!sensorsTypes.contains(sensorType)) {
+          return new LinkedHashMap<String, Integer>();
+        }
+      }
+
+      for (Device device : this.devices) {
+
+        if (this.deviceIdsAuths.contains(device.getId())) {
+          
+          int score = 0;
+          int sumWeight = 0;
+  
+          for (int i = 0; i < functionHealth.size(); i++) {
+            String sensorType = functionHealth
+              .get(i)
+              .getAsJsonObject()
+              .get("sensor")
+              .getAsString();
+            int weight = functionHealth
+              .get(i)
+              .getAsJsonObject()
+              .get("weight")
+              .getAsInt();
+  
+            Sensor sensor = device.getSensorBySensorType(sensorType);
+            sensor.getValue(device.getId());
+            score += sensor.getValue() * weight;
+            sumWeight += weight;
+          }
+  
+          temp.put(device.getId(), score / sumWeight);
+        }
+      }
+    }
+
+    return temp;
+  }
+
+  /**
    * Calcula o score dos dispositivos conectados.
    *
    * @return Map
@@ -340,6 +424,9 @@ public class ControllerImpl implements Controller {
 
     this.removeRequest(id);
     this.removeSpecificResponse(id);
+    this.deviceIdsAuths.clear();
+
+    printlnDebug(this.deviceIdsAuths.toString()); //TODO: apagar
   }
 
   /**
@@ -632,6 +719,14 @@ public class ControllerImpl implements Controller {
 
   public void setUrlAPI(String urlAPI) {
     this.urlAPI = urlAPI;
+  }
+
+  public List<String> getDeviceIdsAuths() {
+    return deviceIdsAuths;
+  }
+
+  public void setDeviceIdsAuths(List<String> deviceIdsAuths) {
+    this.deviceIdsAuths = deviceIdsAuths;
   }
 
   public List<Device> getDevices() {
