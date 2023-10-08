@@ -24,6 +24,7 @@ public class ListenerRequest implements IMqttMessageListener {
   private static final String INVALID_TOP_K = "INVALID_TOP_K/";
   private static final String GET_SENSORS = "GET sensors";
   private static final String GET_TOPK = "GET topk";
+
   private static final int QOS = 1;
   /*--------------------------------------------------------------------------*/
 
@@ -129,6 +130,8 @@ public class ListenerRequest implements IMqttMessageListener {
 
         Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
+        this.controllerImpl.publishDeviceIdsAuths();
+
         /*
          * Consumindo API Iot para resgatar os valores mais atualizados dos
          * dispositivos.
@@ -145,7 +148,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
           MQTTClientUp.publish(TOP_K_FOG_RES + id, payload, 1);
         } else {
-          scores = this.controllerImpl.calculateScores(functionHealth);
+          scores = this.controllerImpl.calculateScoresAuths(functionHealth);
 
           /*
            * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
