@@ -53,7 +53,16 @@ public class ListenerConnection implements IMqttMessageListener {
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
       case CONNECT:
-        this.controllerImpl.addNodeUri(uriDown);
+
+        try {
+          this.controllerImpl.addNodeUri(uriDown);
+        } catch (Exception e) {
+          printlnDebug(e.getMessage());
+          printlnDebug("--");
+          printlnDebug(e.toString());
+          printlnDebug("--");
+          printlnDebug(e.getStackTrace().toString());
+        }
 
         break;
       case DISCONNECT:
