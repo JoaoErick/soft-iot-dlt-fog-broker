@@ -25,6 +25,8 @@ public class ListenerRequest implements IMqttMessageListener {
   private static final String GET_SENSORS = "GET sensors";
   private static final String GET_TOPK = "GET topk";
 
+  private static final String AUTHENTICATED_DEVICES = "AUTHENTICATED_DEVICES";
+
   private static final int QOS = 1;
   /*--------------------------------------------------------------------------*/
 
@@ -107,7 +109,8 @@ public class ListenerRequest implements IMqttMessageListener {
 
             byte[] messageDown = message.getPayload();
 
-            this.publishToDown(TOP_K, messageDown);
+            // this.publishToDown(TOP_K, messageDown);
+            this.publishToDown(AUTHENTICATED_DEVICES, messageDown);
           }
 
           /* Aguarda as respostas dos nós da camada inferior conectados a ele;
@@ -119,7 +122,7 @@ public class ListenerRequest implements IMqttMessageListener {
         break;
       case TOP_K:
         printlnDebug("==== Fog gateway -> Bottom gateway  ====");
-        printlnDebug("Calculating scores from devices...");
+        printlnDebug("(Fog Broker) Calculating scores from devices...");
 
         JsonObject jsonGetTopKDown = new Gson()
         .fromJson(mqttMessage, JsonObject.class);
@@ -129,8 +132,6 @@ public class ListenerRequest implements IMqttMessageListener {
         functionHealth = jsonGetTopKDown.get("functionHealth").getAsJsonArray();
 
         Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
-
-        this.controllerImpl.publishDeviceIdsAuths();
 
         /*
          * Consumindo API Iot para resgatar os valores mais atualizados dos
@@ -148,7 +149,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
           MQTTClientUp.publish(TOP_K_FOG_RES + id, payload, 1);
         } else {
-          scores = this.controllerImpl.calculateScoresAuths(functionHealth);
+          scores = this.controllerImpl.calculateScores(functionHealth);
 
           /*
            * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
@@ -281,7 +282,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
       MQTTClientDown.connect();
       MQTTClientDown.publish(topicDown, messageDown, QOS);
-      MQTTClientDown.disconnect();
+      // MQTTClientDown.disconnect();
     }
   }
 
