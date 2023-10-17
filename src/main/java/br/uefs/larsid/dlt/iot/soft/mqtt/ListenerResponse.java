@@ -2,9 +2,7 @@ package br.uefs.larsid.dlt.iot.soft.mqtt;
 
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToMap;
-import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToList;
 
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -19,8 +17,6 @@ public class ListenerResponse implements IMqttMessageListener {
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES";
   private static final String INVALID_TOP_K = "INVALID_TOP_K";
   private static final String SENSORS_RES = "SENSORS_RES";
-
-  private static final String AUTHENTICATED_DEVICES_RES = "AUTHENTICATED_DEVICES_RES";
   /*--------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -101,17 +97,6 @@ public class ListenerResponse implements IMqttMessageListener {
         /* Adicionando nova requisição. */
         this.controllerImpl.updateResponse("getSensors");
 
-        break;
-      case AUTHENTICATED_DEVICES_RES:
-        printlnDebug("Receiving the list of authenticated devices...");
-
-        this.controllerImpl.setDeviceIdsAuths(
-          ConvertStringToList.convertStringToList(messageContent)
-        );
-        printlnDebug(
-          "Autheticated Devices: " + this.controllerImpl.getDeviceIdsAuths().toString()
-        );
-        
         break;
     }
   }
