@@ -3,6 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.model;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceAuthResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
@@ -41,6 +42,7 @@ public class ControllerImpl implements Controller {
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
   private static final String AUTHENTICATED_DEVICES = "AUTHENTICATED_DEVICES";
+  private static final String AUTHENTICATED_DEVICES_RES = "AUTHENTICATED_DEVICES_RES";
   private static final String CONNECT = "SYN";
   private static final String DISCONNECT = "FIN";
   /*--------------------------------------------------------------------------*/
@@ -70,6 +72,7 @@ public class ControllerImpl implements Controller {
 
     if (hasNodes) {
       nodesUris = new ArrayList<>();
+      deviceIdsAuths = new ArrayList<>();
       String[] topicsRequest = { TOP_K_FOG, SENSORS_FOG };
       String[] topicsConnection = { CONNECT, DISCONNECT };
       String[] topicsResponse = { TOP_K_RES, INVALID_TOP_K, SENSORS_RES };
@@ -99,6 +102,7 @@ public class ControllerImpl implements Controller {
       );
     } else {
       String[] topics = { TOP_K, SENSORS };
+      String[] topicsDeviceAuthResponse = { AUTHENTICATED_DEVICES_RES };
 
       new ListenerRequest(
         this,
@@ -110,10 +114,18 @@ public class ControllerImpl implements Controller {
         debugModeValue
       );
 
+      new ListenerDeviceAuthResponse(
+        this,
+        MQTTClientHost,
+        topicsDeviceAuthResponse,
+        QOS,
+        debugModeValue
+      );
+      
       byte[] payload = String
-        .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
-        .getBytes();
-
+      .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+      .getBytes();
+      
       this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
   }
@@ -131,6 +143,7 @@ public class ControllerImpl implements Controller {
 
       this.MQTTClientUp.unsubscribe(TOP_K);
       this.MQTTClientUp.unsubscribe(SENSORS);
+      // this.MQTTClientUp.unsubscribe(AUTHENTICATED_DEVICES_RES);
     } else {
       this.MQTTClientUp.unsubscribe(TOP_K_FOG);
       this.MQTTClientUp.unsubscribe(SENSORS_FOG);
@@ -140,6 +153,8 @@ public class ControllerImpl implements Controller {
       this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
       this.MQTTClientHost.unsubscribe(SENSORS_RES);
     }
+
+    // this.MQTTClientHost.unsubscribe(AUTHENTICATED_DEVICES_RES);
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
@@ -210,21 +225,14 @@ public class ControllerImpl implements Controller {
    * devidamente autenticados.
    */
   public void publishDeviceIdsAuths() {
-    printlnDebug("Waiting for the gateway to provide the list of authenticated devices");
+    printlnDebug("(Fog Broker) Waiting for the gateway to provide the list of authenticated devices...");
 
-    MQTTClientHost.publish(AUTHENTICATED_DEVICES, "".getBytes(), QOS);
+    try {
+      this.MQTTClientHost.publish(AUTHENTICATED_DEVICES, "".getBytes(), QOS);
+    } catch (Exception e) {
+      printlnDebug("!Error when publishing to receive authenticated devices!");
+    }
 
-    long start = System.currentTimeMillis();
-    long end = start + this.timeoutInSeconds * 1000;
-
-    /*
-      * Enquanto a lista de dispositivos autenticados não é recebida e o 
-      * tempo configurado não terminou.
-      */
-    while (
-      this.deviceIdsAuths.isEmpty() &&
-      System.currentTimeMillis() < end
-    ) {}
   }
 
   /**
@@ -257,7 +265,6 @@ public class ControllerImpl implements Controller {
       for (Device device : this.devices) {
 
         if (this.deviceIdsAuths.contains(device.getId())) {
-          
           int score = 0;
           int sumWeight = 0;
   
@@ -424,9 +431,7 @@ public class ControllerImpl implements Controller {
 
     this.removeRequest(id);
     this.removeSpecificResponse(id);
-    this.deviceIdsAuths.clear();
 
-    printlnDebug(this.deviceIdsAuths.toString()); //TODO: apagar
   }
 
   /**
@@ -670,13 +675,13 @@ public class ControllerImpl implements Controller {
   public void showNodesConnected() {
     printlnDebug("+---- Nodes URI Connected ----+");
     for (String nodeIp : this.getNodeUriList()) {
-      printlnDebug("     " + nodeIp);
+      printlnDebug("       " + nodeIp);
     }
 
     if (this.getNodeUriList().size() == 0) {
       printlnDebug("        empty");
     }
-    printlnDebug("+----------------------------+");
+    printlnDebug("+-----------------------------+\n");
   }
 
   private void printlnDebug(String str) {
@@ -727,6 +732,85 @@ public class ControllerImpl implements Controller {
 
   public void setDeviceIdsAuths(List<String> deviceIdsAuths) {
     this.deviceIdsAuths = deviceIdsAuths;
+  }
+
+  public void clearDeviceIdsAuths() {
+    this.deviceIdsAuths.clear();
+  }
+
+  /**
+   * Calcula o score dos dispositivos na borda da rede.
+   * 
+   * @param jsonGetTopKDown JsonObject - JSON contendo o valor de k, id, 
+   * functionHealth e a lista de dispositivos autenticados.
+   */
+  public void calculateTopKDown(JsonObject jsonGetTopKDown) {
+    printlnDebug("(Fog Broker) Calculating scores from devices...");
+
+    int k;
+    String id;
+    JsonArray functionHealth;
+
+    // JsonObject jsonGetTopKDown = new Gson()
+    // .fromJson(mqttMessage, JsonObject.class);
+
+    id = jsonGetTopKDown.get("id").getAsString();
+    k = jsonGetTopKDown.get("k").getAsInt();
+    functionHealth = jsonGetTopKDown.get("functionHealth").getAsJsonArray();
+
+    Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
+
+    /*
+      * Consumindo API Iot para resgatar os valores mais atualizados dos
+      * dispositivos.
+      */
+    this.loadConnectedDevices();
+
+    /**
+     * Se não houver nenhum dispositivo conectado.
+     */
+    if (this.getDevices().isEmpty()) {
+      printlnDebug("Sorry, there are no devices connected.");
+
+      byte[] payload = scores.toString().getBytes();
+
+      MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+    } else {
+
+      scores = this.calculateScoresAuths(functionHealth);
+
+      /*
+        * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+        * atribuindo-o à carga de mensagem do MQTT
+        */
+      Map<String, Integer> topK = SortTopK.sortTopK(
+        scores,
+        k,
+        debugModeValue
+      );
+
+      if (k > scores.size()) {
+        printlnDebug("Insufficient Top-K!");
+
+        byte[] payload = String
+          .format(
+            "Can't possible calculate the Top-%s, sending the Top-%s!",
+            k,
+            scores.size()
+          )
+          .getBytes();
+
+        MQTTClientUp.publish("INVALID_TOP_K/" + id, payload, 1);
+      }
+
+      printlnDebug("=========================================\n");
+      printlnDebug("TOP_K => " + topK.toString() + "\n");
+      printlnDebug("=========================================");
+
+      byte[] payload = topK.toString().getBytes();
+
+      MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
+    }
   }
 
   public List<Device> getDevices() {

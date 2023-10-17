@@ -28,6 +28,14 @@ public interface Controller {
   void publishDeviceIdsAuths();
 
   /**
+   * Calcula o score dos dispositivos na borda da rede.
+   * 
+   * @param jsonGetTopKDown JsonObject - JSON contendo o valor de k, id, 
+   * functionHealth e a lista de dispositivos autenticados.
+   */
+  void calculateTopKDown(JsonObject jsonGetTopKDown);
+
+  /**
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
@@ -108,6 +116,11 @@ public interface Controller {
    * @param deviceIdsAuths
    */
   void setDeviceIdsAuths(List<String> deviceIdsAuths);
+
+  /**
+   * Limpa a lista de dispositivos conectados autenticados
+   */
+  void clearDeviceIdsAuths();
 
   /**
    * Retorna a quantidade de nós conectados.
