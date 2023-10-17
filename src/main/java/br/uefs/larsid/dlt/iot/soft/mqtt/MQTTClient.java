@@ -224,7 +224,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
       if (mqttClient.isConnected()) {
         mqttClient.publish(topic, payload, qos, retained);
         printlnDebug(
-          String.format("Topic %s published. %dB", topic, payload.length)
+          String.format("(Fog Broker) Topic %s published. %dB", topic, payload.length)
         );
       } else {
         printlnDebug(
@@ -238,7 +238,7 @@ public class MQTTClient implements MqttCallbackExtended, MQTTClientService {
 
   @Override
   public void connectionLost(Throwable cause) {
-    this.printlnDebug(String.format("Lost connection to broker (%s). %s", this.ip, cause));
+    this.printlnDebug(String.format("(Fog Broker) Lost connection to broker (%s). %s", this.ip, cause));
   }
 
   @Override
