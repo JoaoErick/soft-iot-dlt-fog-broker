@@ -29,11 +29,8 @@ public interface Controller {
 
   /**
    * Calcula o score dos dispositivos na borda da rede.
-   * 
-   * @param jsonGetTopKDown JsonObject - JSON contendo o valor de k, id, 
-   * functionHealth e a lista de dispositivos autenticados.
    */
-  void calculateTopKDown(JsonObject jsonGetTopKDown);
+  void calculateTopKDown();
 
   /**
    * Publica o Top-K calculado para a camada de cima.
@@ -213,4 +210,13 @@ public interface Controller {
    * @return List<String>
    */
   public List<String> loadSensorsTypes();
+
+  public Map<String, Integer> getDevicesScores();
+
+  public void addDeviceScore(String deviceId, int score);
+
+  public void putDevicesScoresAll(Map<String, Integer> devicesScores);
+
+  public void setJsonGetTopKDown(JsonObject jsonGetTopKDown);
+  
 }
