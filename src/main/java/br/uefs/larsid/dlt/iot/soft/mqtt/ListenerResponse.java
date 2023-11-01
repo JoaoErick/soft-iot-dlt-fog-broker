@@ -3,6 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.mqtt;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.ConvertStringToMap;
 
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -10,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
 public class ListenerResponse implements IMqttMessageListener {
 
@@ -60,14 +62,26 @@ public class ListenerResponse implements IMqttMessageListener {
     /* Verificar qual o tópico recebido. */
     switch (params[0]) {
       case TOP_K_RES:
+        Gson gson = new Gson();
+        String scoreRealMap, scoreMap;
+
+        List<Map<String, Integer>> list = gson.fromJson(messageContent, new TypeToken<List<Map<String, Integer>>>() {}.getType());
+
+        scoreMap = list.get(0).toString();
+        scoreRealMap = list.get(1).toString();
+
+        if (!scoreRealMap.equals("{}")) {
+          this.controllerImpl.putDevicesScoresAll(ConvertStringToMap.convertStringToMap(scoreRealMap));
+        }
+
         /* Se o mapa de scores recebido for diferente de vazio. */
-        if (!messageContent.equals("{}")) {
+        if (!scoreMap.equals("{}")) {
           Map<String, Integer> fogMap =
             this.controllerImpl.getMapById(params[1]);
 
           /* Adicionando o mapa de scores recebido no mapa geral, levando em 
           consideração o id da requisição. */
-          fogMap.putAll(ConvertStringToMap.convertStringToMap(messageContent));
+          fogMap.putAll(ConvertStringToMap.convertStringToMap(scoreMap));
           controllerImpl.putScores(params[1], fogMap);
 
           printlnDebug(
