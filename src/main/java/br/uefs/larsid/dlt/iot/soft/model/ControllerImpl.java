@@ -9,8 +9,8 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.ConvertValueToScore;
 import br.uefs.larsid.dlt.iot.soft.utils.MapToArray;
-import br.uefs.larsid.dlt.iot.soft.utils.RequestDevicesScores;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -295,7 +295,11 @@ public class ControllerImpl implements Controller {
   
             Sensor sensor = device.getSensorBySensorType(sensorType);
             sensor.getValue(device.getId());
-            score += sensor.getValue() * weight;
+            score += ConvertValueToScore.calculateSensorScore(
+              sensor.getType(), 
+              sensor.getValue() * weight
+            );
+
             sumWeight += weight;
           }
   
