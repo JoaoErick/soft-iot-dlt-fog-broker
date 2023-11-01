@@ -1,6 +1,7 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.RequestDevicesScores;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -73,7 +74,10 @@ public class ListenerDeviceAuthResponse implements IMqttMessageListener {
               "\n"
             );
 
-            this.controllerImpl.calculateTopKDown(jsonGetTopKDown);
+            RequestDevicesScores requester = new RequestDevicesScores(MQTTClientHost, debugModeValue);
+            requester.requestDevicesScores(this.controllerImpl.getDeviceIdsAuths());
+
+            this.controllerImpl.setJsonGetTopKDown(jsonGetTopKDown);
             
             break;
         default:
