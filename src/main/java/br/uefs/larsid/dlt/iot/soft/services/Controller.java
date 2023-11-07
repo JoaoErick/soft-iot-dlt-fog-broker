@@ -15,6 +15,11 @@ public interface Controller {
   Map<String, Integer> calculateScores(JsonArray functionHealth);
 
   /**
+   * Calcula o Top-k dos dispositivos na borda da rede.
+   */
+  void calculateTopKDown();
+
+  /**
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id String - Id da requisição.
@@ -174,4 +179,12 @@ public interface Controller {
    * @return List<String>
    */
   public List<String> loadSensorsTypes();
+
+  public Map<String, Integer> getDevicesScores();
+
+  public void addDeviceScore(String deviceId, int score);
+
+  public void putDevicesScoresAll(Map<String, Integer> devicesScores);
+
+  public void setJsonGetTopKDown(JsonObject jsonGetTopKDown);
 }

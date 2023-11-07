@@ -1,7 +1,7 @@
 package br.uefs.larsid.dlt.iot.soft.mqtt;
 
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
-import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
+import br.uefs.larsid.dlt.iot.soft.utils.RequestDevicesScores;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -19,9 +19,7 @@ public class ListenerRequest implements IMqttMessageListener {
   private static final String SENSORS = "SENSORS";
   private static final String SENSORS_RES = "SENSORS_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
-  private static final String TOP_K_RES = "TOP_K_HEALTH_RES/";
   private static final String TOP_K_FOG_RES = "TOP_K_HEALTH_FOG_RES/";
-  private static final String INVALID_TOP_K = "INVALID_TOP_K/";
   private static final String GET_SENSORS = "GET sensors";
   private static final String GET_TOPK = "GET topk";
   private static final int QOS = 1;
@@ -118,16 +116,12 @@ public class ListenerRequest implements IMqttMessageListener {
         break;
       case TOP_K:
         printlnDebug("==== Fog gateway -> Bottom gateway  ====");
-        printlnDebug("Calculating scores from devices...");
+        printlnDebug("Requesting the real scores of the devices...");
 
         JsonObject jsonGetTopKDown = new Gson()
-        .fromJson(mqttMessage, JsonObject.class);
+            .fromJson(mqttMessage, JsonObject.class);
 
         id = jsonGetTopKDown.get("id").getAsString();
-        k = jsonGetTopKDown.get("k").getAsInt();
-        functionHealth = jsonGetTopKDown.get("functionHealth").getAsJsonArray();
-
-        Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
         /*
          * Consumindo API Iot para resgatar os valores mais atualizados dos
@@ -135,48 +129,22 @@ public class ListenerRequest implements IMqttMessageListener {
          */
         this.controllerImpl.loadConnectedDevices();
 
-        /**
-         * Se não houver nenhum dispositivo conectado.
-         */
         if (this.controllerImpl.getDevices().isEmpty()) {
           printlnDebug("Sorry, there are no devices connected.");
 
-          byte[] payload = scores.toString().getBytes();
+          byte[] payload = "{}".toString().getBytes();
 
           MQTTClientUp.publish(TOP_K_FOG_RES + id, payload, 1);
         } else {
-          scores = this.controllerImpl.calculateScores(functionHealth);
+          this.controllerImpl.setJsonGetTopKDown(jsonGetTopKDown);
 
-          /*
-           * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
-           * atribuindo-o à carga de mensagem do MQTT
-           */
-          Map<String, Integer> topK = SortTopK.sortTopK(
-            scores,
-            k,
-            debugModeValue
+          RequestDevicesScores requester = new RequestDevicesScores(
+            MQTTClientHost, 
+            debugModeValue,
+            this.controllerImpl.getDevices()
           );
 
-          if (k > scores.size()) {
-            printlnDebug("Insufficient Top-K!");
-
-            byte[] payload = String
-              .format(
-                "Can't possible calculate the Top-%s, sending the Top-%s!",
-                k,
-                scores.size()
-              )
-              .getBytes();
-
-            MQTTClientUp.publish(INVALID_TOP_K + id, payload, 1);
-          }
-
-          printlnDebug("TOP_K => " + topK.toString());
-          printlnDebug("=========================================");
-
-          byte[] payload = topK.toString().getBytes();
-
-          MQTTClientUp.publish(TOP_K_RES + id, payload, 1);
+          requester.startRequester();
         }
 
         break;
@@ -278,7 +246,6 @@ public class ListenerRequest implements IMqttMessageListener {
 
       MQTTClientDown.connect();
       MQTTClientDown.publish(topicDown, messageDown, QOS);
-      MQTTClientDown.disconnect();
     }
   }
 

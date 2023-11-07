@@ -31,6 +31,7 @@ public class SortTopK {
       .toArray();
 
     if (debugModeValue) {
+      logger.info("");
       for (Object e : temp) {
         logger.info(
           ((Map.Entry<String, Integer>) e).getKey() +
@@ -38,6 +39,7 @@ public class SortTopK {
           ((Map.Entry<String, Integer>) e).getValue()
         );
       }
+      logger.info("");
     }
 
     Map<String, Integer> topK = new LinkedHashMap<String, Integer>();

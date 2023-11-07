@@ -3,10 +3,12 @@ package br.uefs.larsid.dlt.iot.soft.model;
 import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScore;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
+import br.uefs.larsid.dlt.iot.soft.utils.ConvertValueToScore;
 import br.uefs.larsid.dlt.iot.soft.utils.MapToArray;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -40,6 +42,9 @@ public class ControllerImpl implements Controller {
   private static final String TOP_K_RES = "TOP_K_HEALTH_RES/#";
   private static final String INVALID_TOP_K = "INVALID_TOP_K/#";
   private static final String INVALID_TOP_K_FOG = "INVALID_TOP_K_FOG/";
+
+  private static final String DEVICE_SCORE = "dev/+/score/RES";
+
   private static final String CONNECT = "SYN";
   private static final String DISCONNECT = "FIN";
   /*--------------------------------------------------------------------------*/
@@ -52,9 +57,11 @@ public class ControllerImpl implements Controller {
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private List<Device> devices;
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
+  private Map<String, Integer> devicesScores;
   private List<String> nodesUris;
   private int timeoutInSeconds;
   private JsonObject sensorsTypesJSON = new JsonObject();
+  private JsonObject jsonGetTopKDown;
   private static final Logger logger = Logger.getLogger(ControllerImpl.class.getName());
 
   public ControllerImpl() {}
@@ -66,6 +73,7 @@ public class ControllerImpl implements Controller {
     this.MQTTClientUp.connect();
     this.MQTTClientHost.connect();
 
+    devicesScores = new LinkedHashMap<String, Integer>();
     if (hasNodes) {
       nodesUris = new ArrayList<>();
       String[] topicsRequest = { TOP_K_FOG, SENSORS_FOG };
@@ -97,6 +105,7 @@ public class ControllerImpl implements Controller {
       );
     } else {
       String[] topics = { TOP_K, SENSORS };
+      String[] topicsDeviceScore = { DEVICE_SCORE };
 
       new ListenerRequest(
         this,
@@ -104,6 +113,13 @@ public class ControllerImpl implements Controller {
         MQTTClientHost,
         this.nodesUris,
         topics,
+        QOS,
+        debugModeValue
+      );
+      new ListenerDeviceScore(
+        this,
+        MQTTClientHost,
+        topicsDeviceScore,
         QOS,
         debugModeValue
       );
@@ -129,6 +145,7 @@ public class ControllerImpl implements Controller {
 
       this.MQTTClientUp.unsubscribe(TOP_K);
       this.MQTTClientUp.unsubscribe(SENSORS);
+      this.MQTTClientUp.unsubscribe(DEVICE_SCORE);
     } else {
       this.MQTTClientUp.unsubscribe(TOP_K_FOG);
       this.MQTTClientUp.unsubscribe(SENSORS_FOG);
@@ -248,7 +265,10 @@ public class ControllerImpl implements Controller {
 
           Sensor sensor = device.getSensorBySensorType(sensorType);
           sensor.getValue(device.getId());
-          score += sensor.getValue() * weight;
+          score += ConvertValueToScore.calculateSensorScore(
+            sensor.getType(), 
+            sensor.getValue()
+          ) * weight;
           sumWeight += weight;
         }
 
@@ -323,14 +343,23 @@ public class ControllerImpl implements Controller {
       debugModeValue
     );
 
+    Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
+
+    for (String deviceId : topK.keySet()) {
+      if (this.devicesScores.containsKey(deviceId)) {
+          topKReal.put(deviceId, this.devicesScores.get(deviceId));
+      }
+    }
+
     printlnDebug("Top-K Result => " + topK.toString());
+    printlnDebug("Top-K-Real Result => " + topKReal.toString());
     printlnDebug("==== Fog gateway -> Cloud gateway  ====");
 
     JsonObject json = new JsonObject();
     json.addProperty("id", id);
     json.addProperty("timestamp", System.currentTimeMillis());
 
-    String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK));
+    String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK, topKReal));
 
     json.addProperty("devices", deviceListJson);
 
@@ -507,6 +536,90 @@ public class ControllerImpl implements Controller {
   }
 
   /**
+   * Calcula o Top-k dos dispositivos na borda da rede.
+   */
+  public void calculateTopKDown() {
+    printlnDebug("Calculating scores from devices...");
+
+    int k;
+    String id;
+    JsonArray functionHealth;
+
+    id = this.jsonGetTopKDown.get("id").getAsString();
+    k = this.jsonGetTopKDown.get("k").getAsInt();
+    functionHealth = this.jsonGetTopKDown.get("functionHealth").getAsJsonArray();
+
+    Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
+
+    /*
+      * Consumindo API Iot para resgatar os valores mais atualizados dos
+      * dispositivos.
+      */
+    this.loadConnectedDevices();
+
+    /**
+     * Se não houver nenhum dispositivo conectado.
+     */
+    if (this.getDevices().isEmpty()) {
+      printlnDebug("Sorry, there are no devices connected.");
+
+      byte[] payload = scores.toString().getBytes();
+
+      MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+    } else {
+
+      scores = this.calculateScores(functionHealth);
+
+      /*
+        * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+        * atribuindo-o à carga de mensagem do MQTT
+        */
+      Map<String, Integer> topK = SortTopK.sortTopK(
+        scores,
+        k,
+        debugModeValue
+      );
+
+      Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
+
+      for (String deviceId : topK.keySet()) {
+        if (this.devicesScores.containsKey(deviceId)) {
+            topKReal.put(deviceId, this.devicesScores.get(deviceId));
+        }
+      }
+
+      if (k > scores.size()) {
+        printlnDebug("Insufficient Top-K!");
+
+        byte[] payload = String
+          .format(
+            "Can't possible calculate the Top-%s, sending the Top-%s!",
+            k,
+            scores.size()
+          )
+          .getBytes();
+
+        MQTTClientUp.publish("INVALID_TOP_K/" + id, payload, 1);
+      }
+
+      printlnDebug("=========================================");
+      printlnDebug("TOP_K => " + topK.toString());
+      printlnDebug("TOP_K_REAL => " + topKReal.toString());
+      printlnDebug("=========================================\n");
+
+      List<Map<String, Integer>> mapList = new ArrayList<>();
+      mapList.add(topK);
+      mapList.add(topKReal);
+
+      byte[] payload = mapList.toString().getBytes();
+
+      MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
+      
+      this.devicesScores.clear();
+    }
+  }
+
+  /**
    * Adiciona um URI na lista de URIs.
    *
    * @param uri String - URI que deseja adicionar.
@@ -676,5 +789,21 @@ public class ControllerImpl implements Controller {
   @Override
   public JsonObject getSensorsTypesJSON() {
     return sensorsTypesJSON;
+  }
+
+  public Map<String, Integer> getDevicesScores() {
+    return this.devicesScores;
+  }
+
+  public void addDeviceScore(String deviceId, int score) {
+    this.devicesScores.put(deviceId, score);
+  }
+
+  public void putDevicesScoresAll(Map<String, Integer> devicesScores) {
+    this.devicesScores.putAll(devicesScores);
+  }
+
+  public void setJsonGetTopKDown(JsonObject jsonGetTopKDown) {
+    this.jsonGetTopKDown = jsonGetTopKDown;
   }
 }
