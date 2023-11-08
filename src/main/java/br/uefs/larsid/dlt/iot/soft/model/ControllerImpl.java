@@ -4,12 +4,14 @@ import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScore;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScoreFog;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.ConvertValueToScore;
 import br.uefs.larsid.dlt.iot.soft.utils.MapToArray;
+import br.uefs.larsid.dlt.iot.soft.utils.RequestDevicesScores;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -79,6 +81,7 @@ public class ControllerImpl implements Controller {
       String[] topicsRequest = { TOP_K_FOG, SENSORS_FOG };
       String[] topicsConnection = { CONNECT, DISCONNECT };
       String[] topicsResponse = { TOP_K_RES, INVALID_TOP_K, SENSORS_RES };
+      String[] topicsDeviceScore = { DEVICE_SCORE };
 
       new ListenerRequest(
         this,
@@ -100,6 +103,13 @@ public class ControllerImpl implements Controller {
         this,
         MQTTClientHost,
         topicsResponse,
+        QOS,
+        debugModeValue
+      );
+      new ListenerDeviceScoreFog(
+        this,
+        MQTTClientHost,
+        topicsDeviceScore,
         QOS,
         debugModeValue
       );
@@ -145,7 +155,7 @@ public class ControllerImpl implements Controller {
 
       this.MQTTClientUp.unsubscribe(TOP_K);
       this.MQTTClientUp.unsubscribe(SENSORS);
-      this.MQTTClientUp.unsubscribe(DEVICE_SCORE);
+      this.MQTTClientHost.unsubscribe(DEVICE_SCORE);
     } else {
       this.MQTTClientUp.unsubscribe(TOP_K_FOG);
       this.MQTTClientUp.unsubscribe(SENSORS_FOG);
@@ -154,6 +164,7 @@ public class ControllerImpl implements Controller {
       this.MQTTClientHost.unsubscribe(TOP_K_RES);
       this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
       this.MQTTClientHost.unsubscribe(SENSORS_RES);
+      this.MQTTClientHost.unsubscribe(DEVICE_SCORE);
     }
 
     this.MQTTClientHost.disconnect();
@@ -312,6 +323,22 @@ public class ControllerImpl implements Controller {
     this.loadConnectedDevices();
 
     if (!this.devices.isEmpty()) {
+      RequestDevicesScores requester = new RequestDevicesScores(
+        MQTTClientHost, 
+        debugModeValue,
+        this.devices
+      );
+
+      requester.startRequester();
+
+      start = System.currentTimeMillis();
+      end = start + this.devices.size() * 1000;
+
+      /* Aguardando o recebimento de todos os scores reais. */
+      while (
+        System.currentTimeMillis() < end
+      ) {}
+
       /* Adicionando os dispositivos conectados em si mesmo. */
       this.putScores(id, this.calculateScores(functionHealth));
 
@@ -351,6 +378,8 @@ public class ControllerImpl implements Controller {
       }
     }
 
+    this.devicesScores.clear();
+
     printlnDebug("Top-K Result => " + topK.toString());
     printlnDebug("Top-K-Real Result => " + topKReal.toString());
     printlnDebug("==== Fog gateway -> Cloud gateway  ====");
@@ -369,6 +398,7 @@ public class ControllerImpl implements Controller {
 
     this.removeRequest(id);
     this.removeSpecificResponse(id);
+
   }
 
   /**
