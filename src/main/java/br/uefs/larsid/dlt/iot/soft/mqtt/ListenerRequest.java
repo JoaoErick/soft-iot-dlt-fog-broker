@@ -107,6 +107,8 @@ public class ListenerRequest implements IMqttMessageListener {
             this.publishToDown(TOP_K, messageDown);
           }
 
+          this.controllerImpl.setJsonGetTopKDown(jsonGetTopK);
+
           /* Aguarda as respostas dos nós da camada inferior conectados a ele;
            * e publica para a camada superior o Top-K resultante.
            */

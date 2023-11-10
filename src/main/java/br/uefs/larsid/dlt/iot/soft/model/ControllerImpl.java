@@ -331,73 +331,48 @@ public class ControllerImpl implements Controller {
 
       requester.startRequester();
 
-      start = System.currentTimeMillis();
-      end = start + this.devices.size() * 1000;
-
-      /* Aguardando o recebimento de todos os scores reais. */
-      while (
-        System.currentTimeMillis() < end
-      ) {}
-
-      /* Adicionando os dispositivos conectados em si mesmo. */
-      this.putScores(id, this.calculateScores(functionHealth));
-
-      int topkMapSize = this.topKScores.get(id).size();
-
-      if (topkMapSize < k) {
-        printlnDebug("Insufficient Top-K!");
-
-        this.sendInvalidTopKMessage(
-            id,
-            String.format(
-              "Can't possible calculate the Top-%s, sending the Top-%d!",
-              k,
-              topkMapSize
-            )
-          );
+    } else {
+      printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
+  
+      /*
+       * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+       * atribuindo-o à carga de mensagem do MQTT
+       */
+      Map<String, Integer> topK = SortTopK.sortTopK(
+        this.getMapById(id),
+        k,
+        debugModeValue
+      );
+  
+      Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
+  
+      for (String deviceId : topK.keySet()) {
+        if (this.devicesScores.containsKey(deviceId)) {
+            topKReal.put(deviceId, this.devicesScores.get(deviceId));
+        }
       }
+  
+      this.devicesScores.clear();
+  
+      printlnDebug("Top-K Result => " + topK.toString());
+      printlnDebug("Top-K-Real Result => " + topKReal.toString());
+      printlnDebug("==== Fog gateway -> Cloud gateway  ====");
+  
+      JsonObject json = new JsonObject();
+      json.addProperty("id", id);
+      json.addProperty("timestamp", System.currentTimeMillis());
+  
+      String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK, topKReal));
+  
+      json.addProperty("devices", deviceListJson);
+  
+      byte[] payload = json.toString().replace("\\", "").getBytes();
+  
+      MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+  
+      this.removeRequest(id);
+      this.removeSpecificResponse(id);
     }
-
-    printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
-
-    /*
-     * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
-     * atribuindo-o à carga de mensagem do MQTT
-     */
-    Map<String, Integer> topK = SortTopK.sortTopK(
-      this.getMapById(id),
-      k,
-      debugModeValue
-    );
-
-    Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
-
-    for (String deviceId : topK.keySet()) {
-      if (this.devicesScores.containsKey(deviceId)) {
-          topKReal.put(deviceId, this.devicesScores.get(deviceId));
-      }
-    }
-
-    this.devicesScores.clear();
-
-    printlnDebug("Top-K Result => " + topK.toString());
-    printlnDebug("Top-K-Real Result => " + topKReal.toString());
-    printlnDebug("==== Fog gateway -> Cloud gateway  ====");
-
-    JsonObject json = new JsonObject();
-    json.addProperty("id", id);
-    json.addProperty("timestamp", System.currentTimeMillis());
-
-    String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK, topKReal));
-
-    json.addProperty("devices", deviceListJson);
-
-    byte[] payload = json.toString().replace("\\", "").getBytes();
-
-    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
-
-    this.removeRequest(id);
-    this.removeSpecificResponse(id);
 
   }
 
@@ -563,6 +538,75 @@ public class ControllerImpl implements Controller {
       .getBytes();
 
     this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
+  }
+
+  public void calculateTopKUp() {
+    int k;
+    String id;
+    JsonArray functionHealth;
+
+    id = this.jsonGetTopKDown.get("id").getAsString();
+    k = this.jsonGetTopKDown.get("k").getAsInt();
+    functionHealth = this.jsonGetTopKDown.get("functionHealth").getAsJsonArray();
+
+    /* Adicionando os dispositivos conectados em si mesmo. */
+    this.putScores(id, this.calculateScores(functionHealth));
+
+    int topkMapSize = this.topKScores.get(id).size();
+
+    if (topkMapSize < k) {
+      printlnDebug("Insufficient Top-K!");
+
+      this.sendInvalidTopKMessage(
+          id,
+          String.format(
+            "Can't possible calculate the Top-%s, sending the Top-%d!",
+            k,
+            topkMapSize
+          )
+        );
+    }
+
+    printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
+
+    /*
+     * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+     * atribuindo-o à carga de mensagem do MQTT
+     */
+    Map<String, Integer> topK = SortTopK.sortTopK(
+      this.getMapById(id),
+      k,
+      debugModeValue
+    );
+
+    Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
+
+    for (String deviceId : topK.keySet()) {
+      if (this.devicesScores.containsKey(deviceId)) {
+          topKReal.put(deviceId, this.devicesScores.get(deviceId));
+      }
+    }
+
+    this.devicesScores.clear();
+
+    printlnDebug("Top-K Result => " + topK.toString());
+    printlnDebug("Top-K-Real Result => " + topKReal.toString());
+    printlnDebug("==== Fog gateway -> Cloud gateway  ====");
+
+    JsonObject json = new JsonObject();
+    json.addProperty("id", id);
+    json.addProperty("timestamp", System.currentTimeMillis());
+
+    String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK, topKReal));
+
+    json.addProperty("devices", deviceListJson);
+
+    byte[] payload = json.toString().replace("\\", "").getBytes();
+
+    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+
+    this.removeRequest(id);
+    this.removeSpecificResponse(id);
   }
 
   /**

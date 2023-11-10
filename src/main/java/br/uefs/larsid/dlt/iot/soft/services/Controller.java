@@ -15,6 +15,11 @@ public interface Controller {
   Map<String, Integer> calculateScores(JsonArray functionHealth);
 
   /**
+   * Calcula o Top-k dos dispositivos na névoa.
+   */
+  void calculateTopKUp();
+
+  /**
    * Calcula o Top-k dos dispositivos na borda da rede.
    */
   void calculateTopKDown();
