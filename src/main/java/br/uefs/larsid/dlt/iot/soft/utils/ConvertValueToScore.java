@@ -13,7 +13,7 @@ public class ConvertValueToScore {
             sumValues += calculateSensorScore(sensor.getType(), sensor.getValue());
         }
 
-        return (sumValues / sensors.size());
+        return sumValues;
     }
 
     public static synchronized int calculateSensorScore(String sensorType, int value) {
