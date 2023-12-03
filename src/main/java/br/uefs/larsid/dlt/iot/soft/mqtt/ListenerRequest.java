@@ -92,6 +92,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
           this.controllerImpl.sendEmptyTopK(id);
         } else {
+          this.controllerImpl.setResponseTime(System.currentTimeMillis());
           Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
 
           this.controllerImpl.getTopKScores().put(id, scoreMapEmpty);

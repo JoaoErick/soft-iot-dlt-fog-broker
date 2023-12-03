@@ -192,4 +192,8 @@ public interface Controller {
   public void putDevicesScoresAll(Map<String, Integer> devicesScores);
 
   public void setJsonGetTopKDown(JsonObject jsonGetTopKDown);
+
+  public long getResponseTime();
+
+  public void setResponseTime(long responseTime);
 }
