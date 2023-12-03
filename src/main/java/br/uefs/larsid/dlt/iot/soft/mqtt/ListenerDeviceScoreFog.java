@@ -51,11 +51,6 @@ public class ListenerDeviceScoreFog implements IMqttMessageListener {
   @Override
   public void messageArrived(String topic, MqttMessage message)
       throws Exception {
-    Thread messageProcessingThread = new Thread(() -> processMessage(topic, message));
-    messageProcessingThread.start();
-  }
-
-  private void processMessage(String topic, MqttMessage message) {
     String msg = new String(message.getPayload());
     String deviceId;
     int score;
@@ -65,16 +60,7 @@ public class ListenerDeviceScoreFog implements IMqttMessageListener {
     deviceId = jsonProperties.get("HEADER").getAsJsonObject().get("NAME").getAsString();
     score = jsonProperties.get("BODY").getAsJsonObject().get("score").getAsInt();
 
-    printlnDebug("------------- Score Device Received -------------");
-    printlnDebug("Device ID: " + deviceId);
-    printlnDebug("Score: " + score);
-    printlnDebug("----------------------------------------------\n");
-
     this.controllerImpl.addDeviceScore(deviceId, score);
-
-    if (this.controllerImpl.getDevicesScores().size() == this.controllerImpl.getDevices().size()) {
-      this.controllerImpl.calculateTopKUp();
-    }
   }
 
   private void printlnDebug(String str) {
