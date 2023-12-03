@@ -20,6 +20,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +66,8 @@ public class ControllerImpl implements Controller {
   private int timeoutInSeconds;
   private JsonObject sensorsTypesJSON = new JsonObject();
   private JsonObject jsonGetTopKDown;
+
+  private long responseTime;
   private static final Logger logger = Logger.getLogger(ControllerImpl.class.getName());
 
   public ControllerImpl() {}
@@ -331,6 +335,30 @@ public class ControllerImpl implements Controller {
 
       requester.startRequester();
 
+      // start = System.currentTimeMillis();
+      // end = start + this.devices.size() * 1000;
+
+      printlnDebug("...Waiting for timeout to receive device scores...");
+      while (
+        this.devicesScores.size() != this.devices.size()
+      ) {
+        // printlnDebug("qtd: " + this.devicesScores.size());
+        this.printProgressBar(
+          (double) (this.devicesScores.size()) / this.devices.size()
+        );
+      }
+      // while (
+      //   System.currentTimeMillis() < end
+      // ) {}
+
+      if (this.devicesScores.size() == this.devices.size()) {
+        printlnDebug("All scores were received!");
+      } else {
+        printlnDebug("Some scores were not received!");
+      }
+
+      this.calculateTopKUp();
+
     } else {
       printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
   
@@ -372,7 +400,10 @@ public class ControllerImpl implements Controller {
   
       this.removeRequest(id);
       this.removeSpecificResponse(id);
+
+      this.showResponseTime();
     }
+
 
   }
 
@@ -541,6 +572,8 @@ public class ControllerImpl implements Controller {
   }
 
   public void calculateTopKUp() {
+    printlnDebug("Calculating scores from devices...");
+
     int k;
     String id;
     JsonArray functionHealth;
@@ -607,6 +640,8 @@ public class ControllerImpl implements Controller {
 
     this.removeRequest(id);
     this.removeSpecificResponse(id);
+
+    this.showResponseTime();
   }
 
   /**
@@ -694,6 +729,36 @@ public class ControllerImpl implements Controller {
   }
 
   /**
+   * Exibe o tempo de resposta de uma solicitação.
+   */
+  private void showResponseTime() {
+    this.responseTime = System.currentTimeMillis() - this.responseTime;
+
+    printlnDebug("+------------------------------+");
+    printlnDebug(
+      String.format("Tempo de resposta: %s ms", this.responseTime)
+    );
+    printlnDebug("+------------------------------+");
+  }
+
+  private void printProgressBar(double progress) {
+    final int width = 50;  // Largura da barra de progresso
+    int progressInt = (int) (progress * width);
+
+    StringBuilder progressBar = new StringBuilder("[");
+    for (int i = 0; i < width; i++) {
+        if (i < progressInt) {
+            progressBar.append("=");
+        } else {
+            progressBar.append(" ");
+        }
+    }
+    progressBar.append("] " + (int) (progress * 100) + "%");
+
+    printlnDebug("\r" + progressBar.toString());
+  }
+
+  /**
    * Adiciona um URI na lista de URIs.
    *
    * @param uri String - URI que deseja adicionar.
@@ -720,7 +785,9 @@ public class ControllerImpl implements Controller {
     if (pos != -1) {
       this.nodesUris.remove(pos);
 
-      printlnDebug(String.format("URI: %s removed in the nodesIps list.", uri));
+      printlnDebug(
+        String.format("URI: %s removed in the nodesIps list.", uri)
+      );
 
       this.showNodesConnected();
     } else {
@@ -853,6 +920,14 @@ public class ControllerImpl implements Controller {
 
   public void setTimeoutInSeconds(int timeoutInSeconds) {
     this.timeoutInSeconds = timeoutInSeconds;
+  }
+
+  public long getResponseTime() {
+    return this.responseTime;
+  }
+
+  public void setResponseTime(long responseTime) {
+    this.responseTime = responseTime;
   }
 
   /**
