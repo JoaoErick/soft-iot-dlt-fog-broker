@@ -35,9 +35,12 @@ public class MapToArray {
   }
 
   /**
-   * Converte um Map<String, Integer> em um Array de JsonObject.
+   * Converte Map<String, Integer> em Array de JsonObject.
    *
-   * @param map Map<String, Integer> - Mapa que deseja converter
+   * @param map1 Map<String, Integer> - Mapa com os scores calculados no 
+   * gateway que deseja converter
+   * @param map2 Map<String, Integer> - Mapa com os scores calculados nos 
+   * dispositivos que deseja converter
    * @return Object[]
    */
   public static Object[] mapToArray(Map<String, Integer> map1, Map<String, Integer> map2) {
@@ -45,34 +48,25 @@ public class MapToArray {
 
     for (Object object : map1.entrySet().stream().toArray()) {
       JsonObject json = new JsonObject();
+      String key = ((Map.Entry<String, Integer>) object).getKey();
 
       json.addProperty(
         "deviceId",
-        ((Map.Entry<String, Integer>) object).getKey()
+        key
       );
       json.addProperty(
         "score",
         ((Map.Entry<String, Integer>) object).getValue()
       );
 
-      array.add(json);
-    }
-
-    int index = 0;
-    for (Object object : map2.entrySet().stream().toArray()) {
-
-      if (array.get(index).get("deviceId").getAsString()
-            .equals(
-              ((Map.Entry<String, Integer>) object).getKey()
-            )
-      ) {
-        array.get(index).addProperty(
+      if (map2.containsKey(key)) {
+        json.addProperty(
           "realScore",
-          ((Map.Entry<String, Integer>) object).getValue()
+          map2.get(key)
         );
       }
 
-      index++;
+      array.add(json);
     }
 
     return array.toArray();
