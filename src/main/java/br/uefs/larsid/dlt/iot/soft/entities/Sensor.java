@@ -1,7 +1,9 @@
-package br.uefs.larsid.dlt.iot.soft.entity;
+package br.uefs.larsid.dlt.iot.soft.entities;
 
-import br.uefs.larsid.dlt.iot.soft.model.ClientIotService;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import br.uefs.larsid.dlt.iot.soft.models.ClientIotService;
+
 import org.json.JSONObject;
 
 public class Sensor {
@@ -9,7 +11,7 @@ public class Sensor {
   private String id;
   private String type;
   private int value;
-  private String urlAPI;
+  private String deviceAPIAddress;
 
   @JsonProperty("collection_time")
   private int collectionTime;
@@ -17,7 +19,8 @@ public class Sensor {
   @JsonProperty("publishing_time")
   private int publishingTime;
 
-  public Sensor() {}
+  public Sensor() {
+  }
 
   /**
    * Atualiza o valor do sensor.
@@ -25,7 +28,7 @@ public class Sensor {
    * @param idDevice String - Id do dispositivo.
    */
   public void getValue(String idDevice) {
-    String url = String.format("%s/%s/%s", urlAPI, idDevice, this.id);
+    String url = String.format("%s/%s/%s", deviceAPIAddress, idDevice, this.id);
     String response = ClientIotService.getApiIot(url);
 
     if (response != null) {
@@ -76,11 +79,11 @@ public class Sensor {
     this.value = value;
   }
 
-  public String getUrlAPI() {
-    return urlAPI;
+  public String getdeviceAPIAddress() {
+    return deviceAPIAddress;
   }
 
-  public void setUrlAPI(String urlAPI) {
-    this.urlAPI = urlAPI;
+  public void setdeviceAPIAddress(String deviceAPIAddress) {
+    this.deviceAPIAddress = deviceAPIAddress;
   }
 }

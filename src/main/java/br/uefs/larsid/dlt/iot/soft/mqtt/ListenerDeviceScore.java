@@ -67,7 +67,11 @@ public class ListenerDeviceScore implements IMqttMessageListener {
 
     this.controllerImpl.addDeviceScore(deviceId, score);
 
-    if (this.controllerImpl.getDevicesScores().size() == this.controllerImpl.getDevices().size()) {
+    if (
+      this.controllerImpl.getDevicesScores().size() 
+      == 
+      this.controllerImpl.getNode().getDevices().size()
+    ) {
       this.controllerImpl.calculateTopKDown();
     }
         

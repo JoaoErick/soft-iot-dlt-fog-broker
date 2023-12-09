@@ -1,8 +1,10 @@
 package br.uefs.larsid.dlt.iot.soft.services;
 
-import br.uefs.larsid.dlt.iot.soft.entity.Device;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import br.uefs.larsid.dlt.iot.soft.models.Node;
+
 import java.util.List;
 import java.util.Map;
 
@@ -93,12 +95,12 @@ public interface Controller {
    */
   int getNodes();
 
-  /**
-   * Retorna a quantidade de nós conectados.
-   *
-   * @return String
-   */
-  List<Device> getDevices();
+  // /**
+  //  * Retorna a quantidade de nós conectados.
+  //  *
+  //  * @return String
+  //  */
+  // List<Device> getDevices();
 
   /**
    * Cria uma nova chave no mapa de resposta dos filhos.
@@ -121,10 +123,14 @@ public interface Controller {
    */
   void removeSpecificResponse(String key);
 
-  /**
-   * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
-   */
-  void loadConnectedDevices();
+  // /**
+  //  * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
+  //  */
+  // void loadConnectedDevices();
+
+  public Node getNode();
+
+  public void setNode(Node node);
 
   /**
    * Adiciona um URI na lista de URIs.

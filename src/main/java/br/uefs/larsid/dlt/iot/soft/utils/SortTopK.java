@@ -3,11 +3,8 @@ package br.uefs.larsid.dlt.iot.soft.utils;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class SortTopK {
-
-  private static final Logger logger = Logger.getLogger(SortTopK.class.getName());
 
   /**
    * Ordena o mapa contendo os scores dos dispositivos.
@@ -29,18 +26,6 @@ public class SortTopK {
         Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
       )
       .toArray();
-
-    if (debugModeValue) {
-      logger.info("");
-      for (Object e : temp) {
-        logger.info(
-          ((Map.Entry<String, Integer>) e).getKey() +
-          " : " +
-          ((Map.Entry<String, Integer>) e).getValue()
-        );
-      }
-      logger.info("");
-    }
 
     Map<String, Integer> topK = new LinkedHashMap<String, Integer>();
 

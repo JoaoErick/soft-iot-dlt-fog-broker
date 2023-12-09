@@ -2,7 +2,7 @@ package br.uefs.larsid.dlt.iot.soft.utils;
 
 import java.util.List;
 
-import br.uefs.larsid.dlt.iot.soft.entity.Sensor;
+import br.uefs.larsid.dlt.iot.soft.entities.Sensor;
 
 public class ConvertValueToScore {
 

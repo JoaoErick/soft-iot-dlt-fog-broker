@@ -1,4 +1,4 @@
-package br.uefs.larsid.dlt.iot.soft.model;
+package br.uefs.larsid.dlt.iot.soft.models;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,23 +17,21 @@ public class ClientIotService {
   /**
    * Solicita os dispositivos que estão conectados através da API.
    *
-   * @param urlAPI String - Url da API.
+   * @param deviceAPIAddress String - Url da API.
    * @return String
    */
-  public static String getApiIot(String urlAPI) {
+  public static String getApiIot(String deviceAPIAddress) {
     try {
-      URL url = new URL(urlAPI);
+      URL url = new URL(deviceAPIAddress);
       HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
       if (conn.getResponseCode() != HTTP_SUCCESS) {
         throw new RuntimeException(
-          "HTTP error code : " + conn.getResponseCode()
-        );
+            "HTTP error code : " + conn.getResponseCode());
       }
 
       BufferedReader br = new BufferedReader(
-        new InputStreamReader((conn.getInputStream()))
-      );
+          new InputStreamReader((conn.getInputStream())));
 
       String temp = null;
       String devicesJson = null;

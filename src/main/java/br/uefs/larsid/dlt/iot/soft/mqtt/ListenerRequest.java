@@ -126,13 +126,13 @@ public class ListenerRequest implements IMqttMessageListener {
 
         id = jsonGetTopKDown.get("id").getAsString();
 
-        /*
-         * Consumindo API Iot para resgatar os valores mais atualizados dos
-         * dispositivos.
-         */
-        this.controllerImpl.loadConnectedDevices();
+        // /*
+        //  * Consumindo API Iot para resgatar os valores mais atualizados dos
+        //  * dispositivos.
+        //  */
+        // this.controllerImpl.loadConnectedDevices();
 
-        if (this.controllerImpl.getDevices().isEmpty()) {
+        if (this.controllerImpl.getNode().getDevices().isEmpty()) {
           printlnDebug("Sorry, there are no devices connected.");
 
           byte[] payload = "{}".toString().getBytes();
@@ -144,7 +144,7 @@ public class ListenerRequest implements IMqttMessageListener {
           RequestDevicesScores requester = new RequestDevicesScores(
             MQTTClientHost, 
             debugModeValue,
-            this.controllerImpl.getDevices()
+            this.controllerImpl.getNode().getDevices()
           );
 
           requester.startRequester();
@@ -154,15 +154,15 @@ public class ListenerRequest implements IMqttMessageListener {
       case GET_SENSORS:
         printlnDebug("==== Cloud gateway -> Fog gateway  ====");
 
-        /**
-         * Requisitando os dispositivos que estão conectados ao próprio nó.
-         */
-        this.controllerImpl.loadConnectedDevices();
+        // /**
+        //  * Requisitando os dispositivos que estão conectados ao próprio nó.
+        //  */
+        // this.controllerImpl.loadConnectedDevices();
 
         /**
          * Caso existam dispositivos conectados ao próprio nó.
          */
-        if (this.controllerImpl.getDevices().size() > 0) {
+        if (this.controllerImpl.getNode().getDevices().size() > 0) {
           JsonObject jsonGetSensors = new JsonObject();
           String deviceListJson = new Gson()
           .toJson(this.controllerImpl.loadSensorsTypes());
@@ -198,10 +198,10 @@ public class ListenerRequest implements IMqttMessageListener {
 
         printlnDebug("==== Fog gateway -> Bottom gateway  ====");
 
-        /**
-         * Requisitando os dispositivos que estão conectados ao próprio nó.
-         */
-        this.controllerImpl.loadConnectedDevices();
+        // /**
+        //  * Requisitando os dispositivos que estão conectados ao próprio nó.
+        //  */
+        // this.controllerImpl.loadConnectedDevices();
 
         JsonObject jsonGetSensors = new JsonObject();
         String deviceListJson = new Gson()

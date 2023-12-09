@@ -3,7 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.utils;
 import java.util.List;
 import java.util.logging.Logger;
 
-import br.uefs.larsid.dlt.iot.soft.entity.Device;
+import br.uefs.larsid.dlt.iot.soft.entities.Device;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 
 public class RequestDevicesScores implements Runnable {

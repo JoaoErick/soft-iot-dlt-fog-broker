@@ -1,4 +1,4 @@
-package br.uefs.larsid.dlt.iot.soft.entity;
+package br.uefs.larsid.dlt.iot.soft.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
