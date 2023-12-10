@@ -55,13 +55,14 @@ public class ControllerImpl implements Controller {
   private List<String> nodesUris;
   private int timeoutInSeconds;
   private JsonObject sensorsTypesJSON = new JsonObject();
-  private JsonObject jsonGetTopKDown;
-  
+  private JsonObject jsonGetTopK;
+
   private long responseTime;
   private boolean debugModeValue;
   private static final Logger logger = Logger.getLogger(ControllerImpl.class.getName());
 
-  public ControllerImpl() {}
+  public ControllerImpl() {
+  }
 
   /**
    * Inicializa o bundle.
@@ -244,6 +245,7 @@ public class ControllerImpl implements Controller {
     }
 
     if (!this.node.getDevices().isEmpty()) {
+      printlnDebug("Requesting the real scores of the devices...");
       RequestDevicesScores requester = new RequestDevicesScores(
           MQTTClientHost,
           debugModeValue,
@@ -429,9 +431,9 @@ public class ControllerImpl implements Controller {
     String id;
     JsonArray functionHealth;
 
-    id = this.jsonGetTopKDown.get("id").getAsString();
-    k = this.jsonGetTopKDown.get("k").getAsInt();
-    functionHealth = this.jsonGetTopKDown.get("functionHealth").getAsJsonArray();
+    id = this.jsonGetTopK.get("id").getAsString();
+    k = this.jsonGetTopK.get("k").getAsInt();
+    functionHealth = this.jsonGetTopK.get("functionHealth").getAsJsonArray();
 
     /* Adicionando os dispositivos conectados em si mesmo. */
     this.putScores(id, this.calculateScores(functionHealth));
@@ -462,9 +464,9 @@ public class ControllerImpl implements Controller {
     String id;
     JsonArray functionHealth;
 
-    id = this.jsonGetTopKDown.get("id").getAsString();
-    k = this.jsonGetTopKDown.get("k").getAsInt();
-    functionHealth = this.jsonGetTopKDown.get("functionHealth").getAsJsonArray();
+    id = this.jsonGetTopK.get("id").getAsString();
+    k = this.jsonGetTopK.get("k").getAsInt();
+    functionHealth = this.jsonGetTopK.get("functionHealth").getAsJsonArray();
 
     Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
 
@@ -490,6 +492,20 @@ public class ControllerImpl implements Controller {
           k,
           debugModeValue);
 
+      printlnDebug("...Waiting for timeout to receive device scores...");
+      
+      long start = System.currentTimeMillis();
+      long end = start + this.timeoutInSeconds * 1000;
+      while (
+        this.devicesScores.size() != this.node.getDevices().size() &&
+        System.currentTimeMillis() < end
+      ) {
+        printlnDebug(
+            String.format("\rScores Received: [%s/%s] ",
+                this.devicesScores.size(),
+                this.node.getDevices().size()));
+      }
+
       Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
       for (String deviceId : topK.keySet()) {
@@ -510,11 +526,6 @@ public class ControllerImpl implements Controller {
 
         MQTTClientUp.publish("INVALID_TOP_K/" + id, payload, 1);
       }
-
-      printlnDebug("=========================================");
-      printlnDebug("TOP_K => " + topK.toString());
-      printlnDebug("TOP_K_REAL => " + topKReal.toString());
-      printlnDebug("=========================================\n");
 
       List<Map<String, Integer>> mapList = new ArrayList<>();
       mapList.add(topK);
@@ -541,16 +552,18 @@ public class ControllerImpl implements Controller {
         debugModeValue);
 
     printlnDebug("...Waiting for timeout to receive device scores...");
-    while (this.devicesScores.size() != this.node.getDevices().size()) {
-      printlnDebug(
-        String.format("Scores Received: [%s/%s] ", 
-          this.devicesScores.size(),
-          this.node.getDevices().size()
-        )
-      );
-    }
 
-    printlnDebug("All scores were received!");
+    long start = System.currentTimeMillis();
+    long end = start + this.timeoutInSeconds * 1000;
+    while (
+      this.devicesScores.size() != this.node.getDevices().size() &&
+      System.currentTimeMillis() < end
+    ) {
+      printlnDebug(
+          String.format("\rScores Received: [%s/%s] ",
+              this.devicesScores.size(),
+              this.node.getDevices().size()));
+    }
 
     Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
@@ -779,7 +792,7 @@ public class ControllerImpl implements Controller {
     this.devicesScores.putAll(devicesScores);
   }
 
-  public void setJsonGetTopKDown(JsonObject jsonGetTopKDown) {
-    this.jsonGetTopKDown = jsonGetTopKDown;
+  public void setJsonGetTopK(JsonObject jsonGetTopK) {
+    this.jsonGetTopK = jsonGetTopK;
   }
 }
