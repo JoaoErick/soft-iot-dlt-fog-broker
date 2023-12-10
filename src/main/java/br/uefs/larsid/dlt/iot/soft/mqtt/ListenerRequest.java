@@ -80,12 +80,12 @@ public class ListenerRequest implements IMqttMessageListener {
 
     switch (topic) {
       case GET_TOPK:
-        JsonObject jsonGetTopK = new Gson()
+        JsonObject jsonGetTopKUp = new Gson()
         .fromJson(mqttMessage, JsonObject.class);
 
-        id = jsonGetTopK.get("id").getAsString();
-        k = jsonGetTopK.get("k").getAsInt();
-        functionHealth = jsonGetTopK.get("functionHealth").getAsJsonArray();
+        id = jsonGetTopKUp.get("id").getAsString();
+        k = jsonGetTopKUp.get("k").getAsInt();
+        functionHealth = jsonGetTopKUp.get("functionHealth").getAsJsonArray();
 
         if (k == 0) {
           printlnDebug("Top-K = 0");
@@ -108,7 +108,7 @@ public class ListenerRequest implements IMqttMessageListener {
             this.publishToDown(TOP_K, messageDown);
           }
 
-          this.controllerImpl.setJsonGetTopKDown(jsonGetTopK);
+          this.controllerImpl.setJsonGetTopK(jsonGetTopKUp);
 
           /* Aguarda as respostas dos nós da camada inferior conectados a ele;
            * e publica para a camada superior o Top-K resultante.
@@ -126,12 +126,6 @@ public class ListenerRequest implements IMqttMessageListener {
 
         id = jsonGetTopKDown.get("id").getAsString();
 
-        // /*
-        //  * Consumindo API Iot para resgatar os valores mais atualizados dos
-        //  * dispositivos.
-        //  */
-        // this.controllerImpl.loadConnectedDevices();
-
         if (this.controllerImpl.getNode().getDevices().isEmpty()) {
           printlnDebug("Sorry, there are no devices connected.");
 
@@ -139,7 +133,7 @@ public class ListenerRequest implements IMqttMessageListener {
 
           MQTTClientUp.publish(TOP_K_FOG_RES + id, payload, 1);
         } else {
-          this.controllerImpl.setJsonGetTopKDown(jsonGetTopKDown);
+          this.controllerImpl.setJsonGetTopK(jsonGetTopKDown);
 
           RequestDevicesScores requester = new RequestDevicesScores(
             MQTTClientHost, 
@@ -148,16 +142,13 @@ public class ListenerRequest implements IMqttMessageListener {
           );
 
           requester.startRequester();
+
+          // this.controllerImpl.calculateTopKDown();
         }
 
         break;
       case GET_SENSORS:
         printlnDebug("==== Cloud gateway -> Fog gateway  ====");
-
-        // /**
-        //  * Requisitando os dispositivos que estão conectados ao próprio nó.
-        //  */
-        // this.controllerImpl.loadConnectedDevices();
 
         /**
          * Caso existam dispositivos conectados ao próprio nó.
@@ -197,11 +188,6 @@ public class ListenerRequest implements IMqttMessageListener {
         byte[] payload;
 
         printlnDebug("==== Fog gateway -> Bottom gateway  ====");
-
-        // /**
-        //  * Requisitando os dispositivos que estão conectados ao próprio nó.
-        //  */
-        // this.controllerImpl.loadConnectedDevices();
 
         JsonObject jsonGetSensors = new JsonObject();
         String deviceListJson = new Gson()
