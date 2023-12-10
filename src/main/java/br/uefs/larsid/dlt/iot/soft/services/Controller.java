@@ -29,10 +29,10 @@ public interface Controller {
   /**
    * Publica o Top-K calculado para a camada de cima.
    *
-   * @param id String - Id da requisição.
-   * @param k int - Quantidade de scores requisitados.
+   * @param id             String - Id da requisição.
+   * @param k              int - Quantidade de scores requisitados.
    * @param functionHealth JsonArray - Array contendo a função de cálculo do
-   * Top-K.
+   *                       Top-K.
    */
   void publishTopK(String id, int k, JsonArray functionHealth);
 
@@ -49,13 +49,13 @@ public interface Controller {
    * Adiciona um mapa de scores de uma nova requisição no mapa de
    * requisições na sua respectiva.
    *
-   * @param id String - Id da requisição.
+   * @param id     String - Id da requisição.
    * @param fogMap Map - Mapa de requisições.
    */
   void putScores(String id, Map<String, Integer> fogMap);
 
   /**
-   *  Retorna o mapa de requisições do sistema, composto pelo
+   * Retorna o mapa de requisições do sistema, composto pelo
    * id da requisição (chave) e o mapa de scores (valor).
    * O mapa de scores é composto pelo nome do dispositivo (Chave)
    * e o score (valor) associado.
@@ -95,13 +95,6 @@ public interface Controller {
    */
   int getNodes();
 
-  // /**
-  //  * Retorna a quantidade de nós conectados.
-  //  *
-  //  * @return String
-  //  */
-  // List<Device> getDevices();
-
   /**
    * Cria uma nova chave no mapa de resposta dos filhos.
    *
@@ -119,18 +112,9 @@ public interface Controller {
   /**
    * Remove uma resposta específica da fila de respostas.
    *
-   *@param id String - Id da requisição.
+   * @param id String - Id da requisição.
    */
   void removeSpecificResponse(String key);
-
-  // /**
-  //  * Adiciona os dispositivos que foram requisitados na lista de dispositivos.
-  //  */
-  // void loadConnectedDevices();
-
-  public Node getNode();
-
-  public void setNode(Node node);
 
   /**
    * Adiciona um URI na lista de URIs.
@@ -191,13 +175,17 @@ public interface Controller {
    */
   public List<String> loadSensorsTypes();
 
+  public Node getNode();
+
+  public void setNode(Node node);
+
   public Map<String, Integer> getDevicesScores();
 
   public void addDeviceScore(String deviceId, int score);
 
   public void putDevicesScoresAll(Map<String, Integer> devicesScores);
 
-  public void setJsonGetTopKDown(JsonObject jsonGetTopKDown);
+  public void setJsonGetTopK(JsonObject jsonGetTopK);
 
   public long getResponseTime();
 
