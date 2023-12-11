@@ -27,6 +27,14 @@ public interface Controller {
   void calculateTopKDown();
 
   /**
+   * Calcula o Top-k dos Top-ks de acordo com o valor de k solicitado.
+   * 
+   * @param id             String - Id da requisição.
+   * @param k              int - Quantidade de scores requisitados.
+   */
+  void calculateGeneralTopK(String id, int k);
+
+  /**
    * Publica o Top-K calculado para a camada de cima.
    *
    * @param id             String - Id da requisição.

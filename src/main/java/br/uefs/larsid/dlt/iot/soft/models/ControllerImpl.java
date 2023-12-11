@@ -3,7 +3,7 @@ package br.uefs.larsid.dlt.iot.soft.models;
 import br.uefs.larsid.dlt.iot.soft.entities.Device;
 import br.uefs.larsid.dlt.iot.soft.entities.Sensor;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
-import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScore;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScoreEdge;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScoreFog;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerRequest;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
@@ -117,7 +117,7 @@ public class ControllerImpl implements Controller {
           topics,
           QOS,
           debugModeValue);
-      new ListenerDeviceScore(
+      new ListenerDeviceScoreEdge(
           this,
           MQTTClientHost,
           topicsDeviceScore,
@@ -424,6 +424,9 @@ public class ControllerImpl implements Controller {
     this.MQTTClientUp.publish(TOP_K_RES_FOG + topicId, payload, QOS);
   }
 
+  /**
+   * Calcula o Top-k dos dispositivos na névoa.
+   */
   public void calculateTopKUp() {
     printlnDebug("Calculating scores from devices...");
 
@@ -539,7 +542,10 @@ public class ControllerImpl implements Controller {
     }
   }
 
-  private void calculateGeneralTopK(String id, int k) {
+  /**
+   * Calcula o Top-k dos Top-ks de acordo com o valor de k solicitado.
+   */
+  public void calculateGeneralTopK(String id, int k) {
     printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
 
     /*

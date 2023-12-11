@@ -1,7 +1,5 @@
 package br.uefs.larsid.dlt.iot.soft.models;
 
-// import br.uefs.larsid.extended.mapping.devices.services.IDevicePropertiesManager;
-
 import java.util.List;
 import java.util.Timer;
 import java.util.logging.Level;

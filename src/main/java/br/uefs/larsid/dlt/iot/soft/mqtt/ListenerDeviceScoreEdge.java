@@ -14,10 +14,10 @@ import java.util.logging.Logger;
  *
  * @author João Erick Barbosa
  */
-public class ListenerDeviceScore implements IMqttMessageListener {
+public class ListenerDeviceScoreEdge implements IMqttMessageListener {
 
   /*------------------------------ Constants ------------------------------*/ 
-  private static Logger log = Logger.getLogger(ListenerDeviceScore.class.getName());
+  private static Logger log = Logger.getLogger(ListenerDeviceScoreEdge.class.getName());
   /*-------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
@@ -33,7 +33,7 @@ public class ListenerDeviceScore implements IMqttMessageListener {
    * @param qos            int - Quality of service of the topic that will be heard.
    * @param debugModeValue boolean - Mode to debug the code.
    */
-  public ListenerDeviceScore(
+  public ListenerDeviceScoreEdge(
       Controller controllerImpl,
       MQTTClient MQTTClientHost,
       String[] topics,

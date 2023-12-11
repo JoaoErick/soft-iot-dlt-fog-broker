@@ -142,8 +142,6 @@ public class ListenerRequest implements IMqttMessageListener {
           );
 
           requester.startRequester();
-
-          // this.controllerImpl.calculateTopKDown();
         }
 
         break;
