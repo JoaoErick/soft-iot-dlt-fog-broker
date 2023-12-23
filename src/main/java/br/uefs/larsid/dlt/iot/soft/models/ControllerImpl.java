@@ -495,19 +495,7 @@ public class ControllerImpl implements Controller {
           k,
           debugModeValue);
 
-      printlnDebug("...Waiting for timeout to receive device scores...");
-      
-      long start = System.currentTimeMillis();
-      long end = start + this.timeoutInSeconds * 1000;
-      while (
-        this.devicesScores.size() != this.node.getDevices().size() &&
-        System.currentTimeMillis() < end
-      ) {
-        printlnDebug(
-            String.format("\rScores Received: [%s/%s] ",
-                this.devicesScores.size(),
-                this.node.getDevices().size()));
-      }
+      this.waitReceiveScores();
 
       Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
@@ -557,19 +545,7 @@ public class ControllerImpl implements Controller {
         k,
         debugModeValue);
 
-    printlnDebug("...Waiting for timeout to receive device scores...");
-
-    long start = System.currentTimeMillis();
-    long end = start + this.timeoutInSeconds * 1000;
-    while (
-      this.devicesScores.size() != this.node.getDevices().size() &&
-      System.currentTimeMillis() < end
-    ) {
-      printlnDebug(
-          String.format("\rScores Received: [%s/%s] ",
-              this.devicesScores.size(),
-              this.node.getDevices().size()));
-    }
+    this.waitReceiveScores();
 
     Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
@@ -599,6 +575,22 @@ public class ControllerImpl implements Controller {
     this.removeSpecificResponse(id);
 
     this.showResponseTime();
+  }
+
+  private void waitReceiveScores() {
+    printlnDebug("...Waiting for timeout to receive device scores...");
+
+    long start = System.currentTimeMillis();
+    long end = start + this.timeoutInSeconds * 1000;
+    while (
+      this.devicesScores.size() != this.node.getDevices().size() &&
+      System.currentTimeMillis() < end
+    ) {
+      printlnDebug(
+          String.format("\rScores Received: [%s/%s] ",
+              this.devicesScores.size(),
+              this.node.getDevices().size()));
+    }
   }
 
   /**
