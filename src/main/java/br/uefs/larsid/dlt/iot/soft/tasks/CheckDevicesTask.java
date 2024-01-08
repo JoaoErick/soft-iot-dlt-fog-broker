@@ -23,12 +23,12 @@ public class CheckDevicesTask extends TimerTask {
 
     @Override
     public void run() {
-        logger.info("...Checking connected devices...");
+        logger.info("(Fog Broker) Checking connected devices...");
 
         try {
             this.node.loadConnectedDevices();
         } catch (Exception e) {
-            logger.severe("Unable to update device list.");
+            logger.severe("!Unable to update device list!");
             logger.severe(e.getStackTrace().toString());
             this.cancel();
         }
