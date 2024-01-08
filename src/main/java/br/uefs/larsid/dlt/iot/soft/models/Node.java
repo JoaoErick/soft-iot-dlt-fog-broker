@@ -22,7 +22,8 @@ import br.uefs.larsid.dlt.iot.soft.tasks.CheckDevicesTask;
 
 public class Node implements INode {
     private List<Device> devices;
-    
+    private List<String> authenticatedDevicesIds;
+
     private int checkDeviceTaskTime;
     private Timer checkDeviceTimer;
 
@@ -36,17 +37,17 @@ public class Node implements INode {
 
     public void start() {
         this.devices = new ArrayList<>();
+        this.authenticatedDevicesIds = new ArrayList<>();
         this.checkDeviceTimer = new Timer();
         this.checkDeviceTimer.scheduleAtFixedRate(
-            new CheckDevicesTask(this),
-            0,
-            this.checkDeviceTaskTime * 1000
-        );
+                new CheckDevicesTask(this),
+                0,
+                this.checkDeviceTaskTime * 1000);
     }
 
     /**
-   * Executa o que foi definido na função quando o bundle for finalizado.
-   */
+     * Executa o que foi definido na função quando o bundle for finalizado.
+     */
     public void stop() {
         if (this.checkDeviceTimer != null) {
             this.checkDeviceTimer.cancel();
@@ -63,31 +64,27 @@ public class Node implements INode {
 
         try {
             JSONArray jsonArrayDevices = new JSONArray(
-                ClientIotService.getApiIot(this.deviceAPIAddress)
-            );
+                    ClientIotService.getApiIot(this.deviceAPIAddress));
 
             for (int i = 0; i < jsonArrayDevices.length(); i++) {
                 JSONObject jsonDevice = jsonArrayDevices.getJSONObject(i);
                 ObjectMapper mapper = new ObjectMapper();
                 Device device = mapper.readValue(
-                    jsonDevice.toString(), 
-                    Device.class
-                );
+                        jsonDevice.toString(),
+                        Device.class);
 
                 devicesTemp.add(device);
 
                 List<Sensor> tempSensors = new ArrayList<Sensor>();
                 JSONArray jsonArraySensors = jsonDevice.getJSONArray(
-                    "sensors"
-                );
+                        "sensors");
 
                 for (int j = 0; j < jsonArraySensors.length(); j++) {
                     JSONObject jsonSensor = jsonArraySensors.getJSONObject(j);
                     Sensor sensor = mapper.readValue(
-                        jsonSensor.toString(), 
-                        Sensor.class
-                    );
-                    sensor.setdeviceAPIAddress(deviceAPIAddress);
+                            jsonSensor.toString(),
+                            Sensor.class);
+                    sensor.setDeviceAPIAddress(deviceAPIAddress);
                     tempSensors.add(sensor);
                 }
 
@@ -106,7 +103,7 @@ public class Node implements INode {
 
         this.devices = devicesTemp;
 
-        printlnDebug("Amount of devices connected: " + this.devices.size());
+        printlnDebug(this.devices.size() + " devices\n");
     }
 
     public List<Device> getDevices() {
@@ -115,6 +112,14 @@ public class Node implements INode {
 
     public void setDevices(List<Device> devices) {
         this.devices = devices;
+    }
+
+    public List<String> getAuthenticatedDevicesIds() {
+        return authenticatedDevicesIds;
+    }
+
+    public void setAuthenticatedDevicesIds(List<String> authenticatedDevicesIds) {
+        this.authenticatedDevicesIds = authenticatedDevicesIds;
     }
 
     public int getCheckDeviceTaskTime() {

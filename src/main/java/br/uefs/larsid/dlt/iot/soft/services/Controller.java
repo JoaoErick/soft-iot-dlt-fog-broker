@@ -10,6 +10,13 @@ import java.util.Map;
 
 public interface Controller {
   /**
+   * Calcula o score dos dispositivos conectados e autenticados.
+   *
+   * @return Map
+   */
+  Map<String, Integer> calculateScoresAuthenticatedDevices(JsonArray functionHealth);
+
+  /**
    * Calcula o score dos dispositivos conectados.
    *
    * @return Map

@@ -2,6 +2,7 @@ package br.uefs.larsid.dlt.iot.soft.models;
 
 import br.uefs.larsid.dlt.iot.soft.entities.Device;
 import br.uefs.larsid.dlt.iot.soft.entities.Sensor;
+import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerAuthenticatedDevices;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerConnection;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScoreEdge;
 import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerDeviceScoreFog;
@@ -40,6 +41,8 @@ public class ControllerImpl implements Controller {
 
   private static final String DEVICE_SCORE = "dev/+/score/RES";
 
+  private static final String AUTHENTICATED_DEVICES = "AUTHENTICATED_DEVICES";
+
   private static final String CONNECT = "SYN";
   private static final String DISCONNECT = "FIN";
   /*--------------------------------------------------------------------------*/
@@ -49,11 +52,14 @@ public class ControllerImpl implements Controller {
   private boolean hasNodes;
   private MQTTClient MQTTClientUp;
   private MQTTClient MQTTClientHost;
+
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private Map<String, Integer> devicesScores;
+
   private List<String> nodesUris;
   private int timeoutInSeconds;
+
   private JsonObject sensorsTypesJSON = new JsonObject();
   private JsonObject jsonGetTopK;
 
@@ -130,6 +136,15 @@ public class ControllerImpl implements Controller {
 
       this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
+
+    String[] topicsAutheticatedDevices = { AUTHENTICATED_DEVICES };
+
+    new ListenerAuthenticatedDevices(
+          this,
+          MQTTClientHost,
+          topicsAutheticatedDevices,
+          QOS,
+          debugModeValue);
   }
 
   /**
@@ -146,6 +161,7 @@ public class ControllerImpl implements Controller {
       this.MQTTClientUp.unsubscribe(TOP_K);
       this.MQTTClientUp.unsubscribe(SENSORS);
       this.MQTTClientHost.unsubscribe(DEVICE_SCORE);
+      this.MQTTClientHost.unsubscribe(AUTHENTICATED_DEVICES);
     } else {
       this.MQTTClientUp.unsubscribe(TOP_K_FOG);
       this.MQTTClientUp.unsubscribe(SENSORS_FOG);
@@ -155,12 +171,73 @@ public class ControllerImpl implements Controller {
       this.MQTTClientHost.unsubscribe(INVALID_TOP_K);
       this.MQTTClientHost.unsubscribe(SENSORS_RES);
       this.MQTTClientHost.unsubscribe(DEVICE_SCORE);
+      this.MQTTClientHost.unsubscribe(AUTHENTICATED_DEVICES);
     }
 
     this.MQTTClientHost.disconnect();
     this.MQTTClientUp.disconnect();
   }
 
+  /**
+   * Calcula o score dos dispositivos conectados e autenticados.
+   *
+   * @return Map
+   */
+  @Override
+  public Map<String, Integer> calculateScoresAuthenticatedDevices(JsonArray functionHealth) {
+    Map<String, Integer> temp = new LinkedHashMap<String, Integer>();
+    List<String> sensorsTypes = this.loadSensorsTypes();
+    List<String> authenticatedDevicesTemp = this.getNode().getAuthenticatedDevicesIds();
+
+    if (sensorsTypes.size() == functionHealth.size()) {
+      for (int i = 0; i < functionHealth.size(); i++) {
+        String sensorType = functionHealth
+            .get(i)
+            .getAsJsonObject()
+            .get("sensor")
+            .getAsString();
+
+        /**
+         * Caso o tipo de sensor especificado não exista nos dispositivos,
+         * retorna um Map vazio.
+         */
+        if (!sensorsTypes.contains(sensorType)) {
+          return new LinkedHashMap<String, Integer>();
+        }
+      }
+
+      for (Device device : this.node.getDevices()) {
+        if (authenticatedDevicesTemp.contains(device.getId())) {
+          int score = 0;
+          int sumWeight = 0;
+
+          for (int i = 0; i < functionHealth.size(); i++) {
+            String sensorType = functionHealth
+                .get(i)
+                .getAsJsonObject()
+                .get("sensor")
+                .getAsString();
+            int weight = functionHealth
+                .get(i)
+                .getAsJsonObject()
+                .get("weight")
+                .getAsInt();
+
+            Sensor sensor = device.getSensorBySensorType(sensorType);
+            sensor.getValue(device.getId());
+            score += ConvertValueToScore.calculateSensorScore(
+                sensor.getType(),
+                sensor.getValue()) * weight;
+            sumWeight += weight;
+          }
+
+          temp.put(device.getId(), score / sumWeight);
+        }
+      }
+    }
+
+    return temp;
+  }
   /**
    * Calcula o score dos dispositivos conectados.
    *
@@ -439,7 +516,7 @@ public class ControllerImpl implements Controller {
     functionHealth = this.jsonGetTopK.get("functionHealth").getAsJsonArray();
 
     /* Adicionando os dispositivos conectados em si mesmo. */
-    this.putScores(id, this.calculateScores(functionHealth));
+    this.putScores(id, this.calculateScoresAuthenticatedDevices(functionHealth));
 
     int topkMapSize = this.topKScores.get(id).size();
 

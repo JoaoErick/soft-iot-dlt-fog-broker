@@ -16,6 +16,10 @@ public interface INode {
 
     public void setDevices(List<Device> devices);
 
+    public List<String> getAuthenticatedDevicesIds();
+
+    public void setAuthenticatedDevicesIds(List<String> authenticatedDevicesIds);
+
     public int getCheckDeviceTaskTime();
 
     public void setCheckDeviceTaskTime(int checkDeviceTaskTime);
