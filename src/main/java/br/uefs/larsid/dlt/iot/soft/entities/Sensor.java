@@ -79,11 +79,11 @@ public class Sensor {
     this.value = value;
   }
 
-  public String getdeviceAPIAddress() {
+  public String getDeviceAPIAddress() {
     return deviceAPIAddress;
   }
 
-  public void setdeviceAPIAddress(String deviceAPIAddress) {
+  public void setDeviceAPIAddress(String deviceAPIAddress) {
     this.deviceAPIAddress = deviceAPIAddress;
   }
 }
