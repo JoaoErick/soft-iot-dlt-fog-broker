@@ -56,6 +56,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private Map<String, Integer> devicesScores;
+  private int amountDevicesScoresReceived = 0;
 
   private List<String> nodesUris;
   private int timeoutInSeconds;
@@ -561,7 +562,7 @@ public class ControllerImpl implements Controller {
       MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
     } else {
 
-      scores = this.calculateScores(functionHealth);
+      scores = this.calculateScoresAuthenticatedDevices(functionHealth);
 
       /*
        * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
@@ -652,6 +653,8 @@ public class ControllerImpl implements Controller {
     this.removeSpecificResponse(id);
 
     this.showResponseTime();
+
+    this.amountDevicesScoresReceived = 0;
   }
 
   private void waitReceiveScores() {
@@ -660,13 +663,13 @@ public class ControllerImpl implements Controller {
     long start = System.currentTimeMillis();
     long end = start + this.timeoutInSeconds * 1000;
     while (
-      this.devicesScores.size() != this.node.getDevices().size() &&
+      this.devicesScores.size() != this.node.getDevices().size() + this.amountDevicesScoresReceived &&
       System.currentTimeMillis() < end
     ) {
       printlnDebug(
           String.format("\rScores Received: [%s/%s] ",
               this.devicesScores.size(),
-              this.node.getDevices().size()));
+              this.node.getDevices().size() + this.amountDevicesScoresReceived));
     }
   }
 
@@ -864,6 +867,7 @@ public class ControllerImpl implements Controller {
   }
 
   public void putDevicesScoresAll(Map<String, Integer> devicesScores) {
+    this.amountDevicesScoresReceived += devicesScores.size();
     this.devicesScores.putAll(devicesScores);
   }
 

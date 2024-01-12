@@ -60,11 +60,6 @@ public class ListenerDeviceScoreEdge implements IMqttMessageListener {
     deviceId = jsonProperties.get("HEADER").getAsJsonObject().get("NAME").getAsString();
     score = jsonProperties.get("BODY").getAsJsonObject().get("score").getAsInt();
 
-    printlnDebug("------------- Score Device Received -------------");
-    printlnDebug("Device ID: " + deviceId);
-    printlnDebug("Score: " + score);
-    printlnDebug("----------------------------------------------\n");
-
     this.controllerImpl.addDeviceScore(deviceId, score);
 
     if (
