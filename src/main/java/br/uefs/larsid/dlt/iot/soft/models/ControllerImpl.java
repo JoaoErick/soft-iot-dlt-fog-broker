@@ -56,6 +56,7 @@ public class ControllerImpl implements Controller {
   private Map<String, Map<String, Integer>> topKScores = new LinkedHashMap<String, Map<String, Integer>>();
   private Map<String, Integer> responseQueue = new LinkedHashMap<String, Integer>();
   private Map<String, Integer> devicesScores;
+  private int amountDevicesScoresReceived = 0;
 
   private List<String> nodesUris;
   private int timeoutInSeconds;
@@ -130,10 +131,13 @@ public class ControllerImpl implements Controller {
           QOS,
           debugModeValue);
 
+    }
+
+    if (!MQTTClientUp.getIp().equals(MQTTClientHost.getIp())) {
       byte[] payload = String
           .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
           .getBytes();
-
+  
       this.MQTTClientUp.publish(CONNECT, payload, QOS);
     }
 
@@ -152,12 +156,6 @@ public class ControllerImpl implements Controller {
    */
   public void stop() {
     if (!this.hasNodes) {
-      byte[] payload = String
-          .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
-          .getBytes();
-
-      this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
-
       this.MQTTClientUp.unsubscribe(TOP_K);
       this.MQTTClientUp.unsubscribe(SENSORS);
       this.MQTTClientHost.unsubscribe(DEVICE_SCORE);
@@ -172,6 +170,14 @@ public class ControllerImpl implements Controller {
       this.MQTTClientHost.unsubscribe(SENSORS_RES);
       this.MQTTClientHost.unsubscribe(DEVICE_SCORE);
       this.MQTTClientHost.unsubscribe(AUTHENTICATED_DEVICES);
+    }
+
+    if (!MQTTClientUp.getIp().equals("localhost")) {
+      byte[] payload = String
+            .format("%s:%s", MQTTClientHost.getIp(), MQTTClientHost.getPort())
+            .getBytes();
+
+      this.MQTTClientUp.publish(DISCONNECT, payload, QOS);
     }
 
     this.MQTTClientHost.disconnect();
@@ -561,7 +567,7 @@ public class ControllerImpl implements Controller {
       MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
     } else {
 
-      scores = this.calculateScores(functionHealth);
+      scores = this.calculateScoresAuthenticatedDevices(functionHealth);
 
       /*
        * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
@@ -636,22 +642,20 @@ public class ControllerImpl implements Controller {
 
     printlnDebug("==== Fog gateway -> Cloud gateway  ====");
 
-    JsonObject json = new JsonObject();
-    json.addProperty("id", id);
-    json.addProperty("timestamp", System.currentTimeMillis());
+    List<Map<String, Integer>> mapList = new ArrayList<>();
+    mapList.add(topK);
+    mapList.add(topKReal);
 
-    String deviceListJson = new Gson().toJson(MapToArray.mapToArray(topK, topKReal));
+    byte[] payload = mapList.toString().getBytes();
 
-    json.addProperty("devices", deviceListJson);
-
-    byte[] payload = json.toString().replace("\\", "").getBytes();
-
-    MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+    MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
 
     this.removeRequest(id);
     this.removeSpecificResponse(id);
 
     this.showResponseTime();
+
+    this.amountDevicesScoresReceived = 0;
   }
 
   private void waitReceiveScores() {
@@ -660,13 +664,13 @@ public class ControllerImpl implements Controller {
     long start = System.currentTimeMillis();
     long end = start + this.timeoutInSeconds * 1000;
     while (
-      this.devicesScores.size() != this.node.getDevices().size() &&
+      this.devicesScores.size() != this.node.getDevices().size() + this.amountDevicesScoresReceived &&
       System.currentTimeMillis() < end
     ) {
       printlnDebug(
           String.format("\rScores Received: [%s/%s] ",
               this.devicesScores.size(),
-              this.node.getDevices().size()));
+              this.node.getDevices().size() + this.amountDevicesScoresReceived));
     }
   }
 
@@ -864,6 +868,7 @@ public class ControllerImpl implements Controller {
   }
 
   public void putDevicesScoresAll(Map<String, Integer> devicesScores) {
+    this.amountDevicesScoresReceived += devicesScores.size();
     this.devicesScores.putAll(devicesScores);
   }
 
