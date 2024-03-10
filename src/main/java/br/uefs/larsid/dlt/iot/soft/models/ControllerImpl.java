@@ -522,7 +522,11 @@ public class ControllerImpl implements Controller {
     functionHealth = this.jsonGetTopK.get("functionHealth").getAsJsonArray();
 
     /* Adicionando os dispositivos conectados em si mesmo. */
-    this.putScores(id, this.calculateScoresAuthenticatedDevices(functionHealth));
+    if (this.node.hasIdentityService()) {
+      this.putScores(id, this.calculateScoresAuthenticatedDevices(functionHealth));
+    } else {
+      this.putScores(id, this.calculateScores(functionHealth));
+    }
 
     int topkMapSize = this.topKScores.get(id).size();
 
@@ -567,7 +571,11 @@ public class ControllerImpl implements Controller {
       MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
     } else {
 
-      scores = this.calculateScoresAuthenticatedDevices(functionHealth);
+      if (this.node.hasIdentityService()) {
+        scores = this.calculateScoresAuthenticatedDevices(functionHealth);
+      } else {
+        scores = this.calculateScores(functionHealth);
+      }
 
       /*
        * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e

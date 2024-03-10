@@ -28,6 +28,7 @@ public class Node implements INode {
     private Timer checkDeviceTimer;
 
     private String deviceAPIAddress;
+    private boolean hasIdentityService;
 
     private boolean debugModeValue;
     private static final Logger logger = Logger.getLogger(Node.class.getName());
@@ -136,6 +137,14 @@ public class Node implements INode {
 
     public void setDeviceAPIAddress(String deviceAPIAddress) {
         this.deviceAPIAddress = deviceAPIAddress;
+    }
+
+    public boolean hasIdentityService() {
+        return hasIdentityService;
+    }
+
+    public void setHasIdentityService(boolean hasIdentityService) {
+        this.hasIdentityService = hasIdentityService;
     }
 
     public boolean isDebugModeValue() {
