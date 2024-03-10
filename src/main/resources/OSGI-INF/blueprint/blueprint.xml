@@ -10,14 +10,15 @@
         init-method="start" destroy-method="stop">
         <property name="checkDeviceTaskTime" value="${checkDeviceTaskTime}" />
         <property name="deviceAPIAddress" value="${deviceAPIAddress}" />
+        <property name="hasIdentityService" value="${hasIdentityService}" />
         <property name="debugModeValue" value="${debugModeValue}" />
     </bean>
     
     <bean id="MQTTClientUp" class="br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient"
         init-method="start" destroy-method="stop">
         <property name="debugModeValue" value="${debugModeValue}" />
-        <property name="ip" value="${ip_up}" />
-        <property name="port" value="${port_up}" />
+        <property name="ip" value="${ipUp}" />
+        <property name="port" value="${portUp}" />
         <property name="userName" value="${user}" />
         <property name="password" value="${pass}" />
     </bean>
@@ -45,14 +46,15 @@
 		persistent-id="br.uefs.larsid.dlt.soft_iot.fog_broker"
 		update-strategy="reload">
 		<cm:default-properties>
-			<cm:property name="ip_up" value="localhost" />
-            <cm:property name="port_up" value="1883" />
+			<cm:property name="ipUp" value="localhost" />
+            <cm:property name="portUp" value="1883" />
 			<cm:property name="ip" value="localhost" />
 			<cm:property name="port" value="1883" />
 			<cm:property name="user" value="karaf" />
 			<cm:property name="pass" value="karaf" />
 			<cm:property name="deviceAPIAddress" value="http://localhost:8181/cxf/iot-service/devices" />
 			<cm:property name="hasNodes" value="true" />
+            <cm:property name="hasIdentityService" value="false" />
 			<cm:property name="timeoutInSeconds" value="30" />
             <cm:property name="checkDeviceTaskTime" value="5" />
 			<cm:property name="debugModeValue" value="true" />

@@ -13,14 +13,16 @@ Para a comunicação, é utilizado o protocolo MQTT.
 
 | Propriedade      | Descrição                                                          | Valor Padrão                                  |
 | ---------------- | ------------------------------------------------------------------ | --------------------------------------------- |
-| ip_up            | Endereço IP do _Client_ situado na camada acima                    | localhost                                     |
+| ipUp             | Endereço IP do _Client_ situado na camada acima                    | localhost                                     |
 | ip               | Endereço IP de onde o _Bundle_ está sendo executado                | localhost                                     |
 | port             | Porta para conexão com o _Broker_                                  | 1883                                          |
 | user             | Usuário para conexão com o _Broker_                                | karaf                                         |
 | pass             | Senha para conexão com o _Broker_                                  | karaf                                         |
 | deviceAPIAddress | URL da API onde estão os dispositivos                              | http://localhost:8181/cxf/iot-service/devices |
-| hasNodes         | Se o gateway onde o bundle está sendo executado irá possuir filhos | true                                          |
+| hasNodes         | Se o gateway onde o bundle está sendo executado possuirá filhos    | true                                          |
 | timeoutInSeconds | Tempo máximo de espera da resposta dos filhos                      | 30                                            |
+| checkDeviceTaskTime | Intervalo de verificação da quantidade de dispositivos conectados | 20                                          |
+| hasIdentityService | Se o gateway onde o bundle está sendo executado possuirá o serviço de identidade | false                         |
 | debugModeValue   | Modo depuração                                                     | true                                          |
 
 ## Protocolo TopKP

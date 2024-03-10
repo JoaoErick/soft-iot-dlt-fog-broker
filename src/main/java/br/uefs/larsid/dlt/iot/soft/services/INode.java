@@ -27,4 +27,13 @@ public interface INode {
     public String getDeviceAPIAddress();
 
     public void setDeviceAPIAddress(String deviceAPIAddress);
+
+    /**
+     * Verifica se o gateway possui o serviço de identidade habilitado.
+     *
+     * @return boolean
+     */
+    public boolean hasIdentityService();
+
+    public void setHasIdentityService(boolean hasIdentityService);
 }
