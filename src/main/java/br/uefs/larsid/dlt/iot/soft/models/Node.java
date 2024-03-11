@@ -28,8 +28,9 @@ public class Node implements INode {
     private Timer checkDeviceTimer;
 
     private String deviceAPIAddress;
+    
+    private boolean isForwardingGateway;
     private boolean hasIdentityService;
-
     private boolean debugModeValue;
     private static final Logger logger = Logger.getLogger(Node.class.getName());
 
@@ -137,6 +138,14 @@ public class Node implements INode {
 
     public void setDeviceAPIAddress(String deviceAPIAddress) {
         this.deviceAPIAddress = deviceAPIAddress;
+    }
+
+    public boolean isForwardingGateway() {
+        return isForwardingGateway;
+    }
+
+    public void setIsForwardingGateway(boolean isForwardingGateway) {
+        this.isForwardingGateway = isForwardingGateway;
     }
 
     public boolean hasIdentityService() {

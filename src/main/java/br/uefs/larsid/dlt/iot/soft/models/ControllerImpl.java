@@ -625,20 +625,24 @@ public class ControllerImpl implements Controller {
    * Calcula o Top-k dos Top-ks de acordo com o valor de k solicitado.
    */
   public void calculateGeneralTopK(String id, int k) {
-    printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
+    Map<String, Integer> topK = new LinkedHashMap<String, Integer>();
+    Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
-    /*
-     * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
-     * atribuindo-o à carga de mensagem do MQTT
-     */
-    Map<String, Integer> topK = SortTopK.sortTopK(
-        this.getMapById(id),
-        k,
-        debugModeValue);
+    if (this.node.isForwardingGateway()) {
+      printlnDebug("OK... now let's forward the TOP-K's received!");
+
+      topK = this.getMapById(id);
+    } else {
+      printlnDebug("OK... now let's calculate the TOP-K of TOP-K's!");
+  
+      /*
+       * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+       * atribuindo-o à carga de mensagem do MQTT.
+       */
+      topK = SortTopK.sortTopK(this.getMapById(id), k, debugModeValue);
+    }
 
     this.waitReceiveScores();
-
-    Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
     for (String deviceId : topK.keySet()) {
       if (this.devicesScores.containsKey(deviceId)) {

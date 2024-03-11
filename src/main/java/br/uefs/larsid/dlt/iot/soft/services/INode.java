@@ -12,21 +12,52 @@ public interface INode {
      */
     public void loadConnectedDevices();
 
+    /**
+     * Obtém a lista de dispositivos virtuais.
+     *
+     * @return List<String>
+     */
     public List<Device> getDevices();
 
     public void setDevices(List<Device> devices);
 
+    /**
+     * Obtém a lista de dispositivos virtuais autenticados.
+     *
+     * @return List<String>
+     */
     public List<String> getAuthenticatedDevicesIds();
 
     public void setAuthenticatedDevicesIds(List<String> authenticatedDevicesIds);
 
+    /**
+     * Obtém o valor do intervalo definido para verificar a quantidade de 
+     * dispositivos virtuais conectados.
+     *
+     * @return int
+     */
     public int getCheckDeviceTaskTime();
 
     public void setCheckDeviceTaskTime(int checkDeviceTaskTime);
 
+    /**
+     * Obtém o endereço da API dos dispositivos virtuais.
+     *
+     * @return String
+     */
     public String getDeviceAPIAddress();
 
     public void setDeviceAPIAddress(String deviceAPIAddress);
+    
+    /**
+     * Verifica se o gateway está em modo de encaminhamento ou processamento 
+     * de dados.
+     *
+     * @return boolean
+     */
+    public boolean isForwardingGateway();
+
+    public void setIsForwardingGateway(boolean isForwardingGateway);
 
     /**
      * Verifica se o gateway possui o serviço de identidade habilitado.
