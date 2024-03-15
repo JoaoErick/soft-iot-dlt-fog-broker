@@ -19,6 +19,7 @@ Para a comunicação, é utilizado o protocolo MQTT.
 | user             | Usuário para conexão com o _Broker_                                | karaf                                         |
 | pass             | Senha para conexão com o _Broker_                                  | karaf                                         |
 | deviceAPIAddress | URL da API onde estão os dispositivos                              | http://localhost:8181/cxf/iot-service/devices |
+| isForwardingGateway | Se o gateway está em modo de encaminhamento                     | false                                         |
 | hasNodes         | Se o gateway onde o bundle está sendo executado possuirá filhos    | true                                          |
 | timeoutInSeconds | Tempo máximo de espera da resposta dos filhos                      | 30                                            |
 | checkDeviceTaskTime | Intervalo de verificação da quantidade de dispositivos conectados | 20                                          |

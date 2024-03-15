@@ -10,6 +10,7 @@
         init-method="start" destroy-method="stop">
         <property name="checkDeviceTaskTime" value="${checkDeviceTaskTime}" />
         <property name="deviceAPIAddress" value="${deviceAPIAddress}" />
+        <property name="isForwardingGateway" value="${isForwardingGateway}" />
         <property name="hasIdentityService" value="${hasIdentityService}" />
         <property name="debugModeValue" value="${debugModeValue}" />
     </bean>
@@ -54,6 +55,7 @@
 			<cm:property name="pass" value="karaf" />
 			<cm:property name="deviceAPIAddress" value="http://localhost:8181/cxf/iot-service/devices" />
 			<cm:property name="hasNodes" value="true" />
+            <cm:property name="isForwardingGateway" value="false" />
             <cm:property name="hasIdentityService" value="false" />
 			<cm:property name="timeoutInSeconds" value="30" />
             <cm:property name="checkDeviceTaskTime" value="5" />
