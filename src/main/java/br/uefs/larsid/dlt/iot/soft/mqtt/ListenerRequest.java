@@ -135,13 +135,17 @@ public class ListenerRequest implements IMqttMessageListener {
         } else {
           this.controllerImpl.setJsonGetTopK(jsonGetTopKDown);
 
-          RequestDevicesScores requester = new RequestDevicesScores(
-            MQTTClientHost, 
-            debugModeValue,
-            this.controllerImpl.getNode().getDevices()
-          );
+          if (this.controllerImpl.getNode().hasCollectRealScoreService()) {
+            RequestDevicesScores requester = new RequestDevicesScores(
+              MQTTClientHost, 
+              debugModeValue,
+              this.controllerImpl.getNode().getDevices()
+            );
 
-          requester.startRequester();
+            requester.startRequester();
+          } else {
+            this.controllerImpl.calculateTopKDown();
+          }
         }
 
         break;

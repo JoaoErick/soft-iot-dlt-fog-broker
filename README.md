@@ -24,6 +24,7 @@ Para a comunicação, é utilizado o protocolo MQTT.
 | timeoutInSeconds | Tempo máximo de espera da resposta dos filhos                      | 30                                            |
 | checkDeviceTaskTime | Intervalo de verificação da quantidade de dispositivos conectados | 20                                          |
 | hasIdentityService | Se o gateway onde o bundle está sendo executado possuirá o serviço de identidade | false                         |
+| hasCollectRealScoreService | Se o gateway onde o bundle está sendo executado deverá coletar os scores reais | false                         |
 | debugModeValue   | Modo depuração                                                     | true                                          |
 
 ## Protocolo TopKP

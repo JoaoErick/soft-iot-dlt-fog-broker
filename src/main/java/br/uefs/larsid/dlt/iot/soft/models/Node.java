@@ -31,6 +31,7 @@ public class Node implements INode {
 
     private boolean isForwardingGateway;
     private boolean hasIdentityService;
+    private boolean hasCollectRealScoreService;
 
     private boolean debugModeValue;
     private static final Logger logger = Logger.getLogger(Node.class.getName());
@@ -155,6 +156,14 @@ public class Node implements INode {
 
     public void setHasIdentityService(boolean hasIdentityService) {
         this.hasIdentityService = hasIdentityService;
+    }
+
+    public boolean hasCollectRealScoreService() {
+      return hasCollectRealScoreService;
+    }
+
+    public void setHasCollectRealScoreService(boolean hasCollectRealScoreService) {
+      this.hasCollectRealScoreService = hasCollectRealScoreService;
     }
 
     public boolean isDebugModeValue() {

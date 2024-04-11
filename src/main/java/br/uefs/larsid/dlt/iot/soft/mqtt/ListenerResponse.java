@@ -68,10 +68,13 @@ public class ListenerResponse implements IMqttMessageListener {
         List<Map<String, Integer>> list = gson.fromJson(messageContent, new TypeToken<List<Map<String, Integer>>>() {}.getType());
 
         scoreMap = list.get(0).toString();
-        scoreRealMap = list.get(1).toString();
 
-        if (!scoreRealMap.equals("{}")) {
-          this.controllerImpl.putDevicesScoresAll(ConvertStringToMap.convertStringToMap(scoreRealMap));
+        if (this.controllerImpl.getNode().hasCollectRealScoreService()) {
+          scoreRealMap = list.get(1).toString();
+
+          if (!scoreRealMap.equals("{}")) {
+            this.controllerImpl.putDevicesScoresAll(ConvertStringToMap.convertStringToMap(scoreRealMap));
+          }
         }
 
         /* Se o mapa de scores recebido for diferente de vazio. */
