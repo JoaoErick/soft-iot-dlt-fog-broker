@@ -12,6 +12,7 @@
         <property name="deviceAPIAddress" value="${deviceAPIAddress}" />
         <property name="isForwardingGateway" value="${isForwardingGateway}" />
         <property name="hasIdentityService" value="${hasIdentityService}" />
+        <property name="hasCollectRealScoreService" value="${hasCollectRealScoreService}" />
         <property name="debugModeValue" value="${debugModeValue}" />
     </bean>
     
@@ -57,8 +58,9 @@
 			<cm:property name="hasNodes" value="true" />
 			<cm:property name="isForwardingGateway" value="false" />
 			<cm:property name="hasIdentityService" value="false" />
+      <cm:property name="hasCollectRealScoreService" value="false" />
 			<cm:property name="timeoutInSeconds" value="30" />
-            <cm:property name="checkDeviceTaskTime" value="5" />
+      <cm:property name="checkDeviceTaskTime" value="5" />
 			<cm:property name="debugModeValue" value="true" />
 		</cm:default-properties>
 	</cm:property-placeholder>

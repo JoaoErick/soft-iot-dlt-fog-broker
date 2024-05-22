@@ -328,13 +328,15 @@ public class ControllerImpl implements Controller {
     }
 
     if (!this.node.getDevices().isEmpty()) {
-      printlnDebug("Requesting the real scores of the devices...");
-      RequestDevicesScores requester = new RequestDevicesScores(
-          MQTTClientHost,
-          debugModeValue,
-          this.node.getDevices());
+      if (this.node.hasCollectRealScoreService()) {
+        printlnDebug("Requesting the real scores of the devices...");
+        RequestDevicesScores requester = new RequestDevicesScores(
+            MQTTClientHost,
+            debugModeValue,
+            this.node.getDevices());
 
-      requester.startRequester();
+        requester.startRequester();
+      }
 
       this.calculateTopKUp();
 
@@ -559,6 +561,7 @@ public class ControllerImpl implements Controller {
     functionHealth = this.jsonGetTopK.get("functionHealth").getAsJsonArray();
 
     Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
+    Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
     /**
      * Se não houver nenhum dispositivo conectado.
@@ -586,13 +589,13 @@ public class ControllerImpl implements Controller {
           k,
           debugModeValue);
 
-      this.waitReceiveScores();
+      if (this.node.hasCollectRealScoreService()) {
+        this.waitReceiveScores();
 
-      Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
-
-      for (String deviceId : topK.keySet()) {
-        if (this.devicesScores.containsKey(deviceId)) {
-          topKReal.put(deviceId, this.devicesScores.get(deviceId));
+        for (String deviceId : topK.keySet()) {
+          if (this.devicesScores.containsKey(deviceId)) {
+            topKReal.put(deviceId, this.devicesScores.get(deviceId));
+          }
         }
       }
 
@@ -611,7 +614,9 @@ public class ControllerImpl implements Controller {
 
       List<Map<String, Integer>> mapList = new ArrayList<>();
       mapList.add(topK);
-      mapList.add(topKReal);
+      if (this.node.hasCollectRealScoreService()) {
+        mapList.add(topKReal);
+      }
 
       byte[] payload = mapList.toString().getBytes();
 
@@ -642,21 +647,25 @@ public class ControllerImpl implements Controller {
       topK = SortTopK.sortTopK(this.getMapById(id), k, debugModeValue);
     }
 
-    this.waitReceiveScores();
+    if (this.node.hasCollectRealScoreService()) {
+      this.waitReceiveScores();
 
-    for (String deviceId : topK.keySet()) {
-      if (this.devicesScores.containsKey(deviceId)) {
-        topKReal.put(deviceId, this.devicesScores.get(deviceId));
+      for (String deviceId : topK.keySet()) {
+        if (this.devicesScores.containsKey(deviceId)) {
+          topKReal.put(deviceId, this.devicesScores.get(deviceId));
+        }
       }
-    }
 
-    this.devicesScores.clear();
+      this.devicesScores.clear();
+    }
 
     printlnDebug("==== Fog gateway -> Cloud gateway  ====");
 
     List<Map<String, Integer>> mapList = new ArrayList<>();
     mapList.add(topK);
-    mapList.add(topKReal);
+    if (this.node.hasCollectRealScoreService()) {
+      mapList.add(topKReal);
+    }
 
     byte[] payload = mapList.toString().getBytes();
 

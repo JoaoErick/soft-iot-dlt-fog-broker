@@ -67,4 +67,13 @@ public interface INode {
     public boolean hasIdentityService();
 
     public void setHasIdentityService(boolean hasIdentityService);
+
+    /**
+     * Verifica se o gateway deve coletar os scores reais dos dispositivos.
+     * 
+     * @return boolean
+     */
+    public boolean hasCollectRealScoreService();
+
+    public void setHasCollectRealScoreService(boolean hasCollectRealScoreService);
 }
