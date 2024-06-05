@@ -91,14 +91,14 @@ public class ListenerResponse implements IMqttMessageListener {
             "Top-K response received and add to the map: " +
             controllerImpl.getMapById(params[1]).toString()
           );
-
-          /* Adicionando nova requisição. */
-          this.controllerImpl.updateResponse(params[1]);
         } else {
           // TODO: Testar com um dos filhos com mapa vazio.
-          this.controllerImpl.sendEmptyTopK(params[1]);
-          this.controllerImpl.removeRequest(params[1]);
+          // this.controllerImpl.sendEmptyTopK(params[1]);
+          // this.controllerImpl.removeRequest(params[1]);
         }
+
+        /* Adicionando nova requisição. */
+        this.controllerImpl.updateResponse(params[1]);
 
         break;
       case INVALID_TOP_K:
