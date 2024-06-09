@@ -11,10 +11,8 @@ import br.uefs.larsid.dlt.iot.soft.mqtt.ListenerResponse;
 import br.uefs.larsid.dlt.iot.soft.mqtt.MQTTClient;
 import br.uefs.larsid.dlt.iot.soft.services.Controller;
 import br.uefs.larsid.dlt.iot.soft.utils.ConvertValueToScore;
-import br.uefs.larsid.dlt.iot.soft.utils.MapToArray;
 import br.uefs.larsid.dlt.iot.soft.utils.RequestDevicesScores;
 import br.uefs.larsid.dlt.iot.soft.utils.SortTopK;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
@@ -563,67 +561,57 @@ public class ControllerImpl implements Controller {
     Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
     Map<String, Integer> topKReal = new LinkedHashMap<String, Integer>();
 
-    /**
-     * Se não houver nenhum dispositivo conectado.
-     */
-    if (this.node.getDevices().isEmpty()) {
-      printlnDebug("Sorry, there are no devices connected.");
-
-      byte[] payload = scores.toString().getBytes();
-
-      MQTTClientUp.publish(TOP_K_RES_FOG + id, payload, 1);
+    if (this.node.hasIdentityService()) {
+      scores = this.calculateScoresAuthenticatedDevices(functionHealth);
     } else {
+      scores = this.calculateScores(functionHealth);
+    }
 
-      if (this.node.hasIdentityService()) {
-        scores = this.calculateScoresAuthenticatedDevices(functionHealth);
-      } else {
-        scores = this.calculateScores(functionHealth);
-      }
+    /*
+      * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
+      * atribuindo-o à carga de mensagem do MQTT
+      */
+    Map<String, Integer> topK = SortTopK.sortTopK(
+        scores,
+        k,
+        debugModeValue);
 
-      /*
-       * Reordenando o mapa de Top-K (Ex: {device2=23, device1=14}) e
-       * atribuindo-o à carga de mensagem do MQTT
-       */
-      Map<String, Integer> topK = SortTopK.sortTopK(
-          scores,
-          k,
-          debugModeValue);
+    if (this.node.hasCollectRealScoreService()) {
+      this.waitReceiveScores();
 
-      if (this.node.hasCollectRealScoreService()) {
-        this.waitReceiveScores();
-
-        for (String deviceId : topK.keySet()) {
-          if (this.devicesScores.containsKey(deviceId)) {
-            topKReal.put(deviceId, this.devicesScores.get(deviceId));
-          }
+      for (String deviceId : topK.keySet()) {
+        if (this.devicesScores.containsKey(deviceId)) {
+          topKReal.put(deviceId, this.devicesScores.get(deviceId));
         }
       }
 
-      if (k > scores.size()) {
-        printlnDebug("Insufficient Top-K!");
-
-        byte[] payload = String
-            .format(
-                "Can't possible calculate the Top-%s, sending the Top-%s!",
-                k,
-                scores.size())
-            .getBytes();
-
-        MQTTClientUp.publish("INVALID_TOP_K/" + id, payload, 1);
-      }
-
-      List<Map<String, Integer>> mapList = new ArrayList<>();
-      mapList.add(topK);
-      if (this.node.hasCollectRealScoreService()) {
-        mapList.add(topKReal);
-      }
-
-      byte[] payload = mapList.toString().getBytes();
-
-      MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
-
       this.devicesScores.clear();
     }
+
+    if (k > scores.size()) {
+      printlnDebug("Insufficient Top-K!");
+
+      byte[] payload = String
+          .format(
+              "Can't possible calculate the Top-%s, sending the Top-%s!",
+              k,
+              scores.size())
+          .getBytes();
+
+      MQTTClientUp.publish("INVALID_TOP_K/" + id, payload, 1);
+    }
+
+    List<Map<String, Integer>> mapList = new ArrayList<>();
+    mapList.add(topK);
+    if (this.node.hasCollectRealScoreService()) {
+      mapList.add(topKReal);
+    }
+
+    printlnDebug(mapList.toString());
+
+    byte[] payload = mapList.toString().getBytes();
+
+    MQTTClientUp.publish("TOP_K_HEALTH_RES/" + id, payload, 1);
   }
 
   /**
