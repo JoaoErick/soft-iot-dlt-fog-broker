@@ -14,6 +14,7 @@ public class SortTopK {
    * @param debugModeValue boolean - Modo de depuração
    * @return Map<String, Integer>
    */
+  @SuppressWarnings("unchecked")
   public static Map<String, Integer> sortTopK(
     Map<String, Integer> map,
     int k,

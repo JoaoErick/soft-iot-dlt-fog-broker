@@ -13,6 +13,7 @@ public class MapToArray {
    * @param map Map<String, Integer> - Mapa que deseja converter
    * @return Object[]
    */
+  @SuppressWarnings("unchecked")
   public static Object[] mapToArray(Map<String, Integer> map) {
     List<JsonObject> array = new ArrayList<JsonObject>();
 
@@ -43,6 +44,7 @@ public class MapToArray {
    * dispositivos que deseja converter
    * @return Object[]
    */
+  @SuppressWarnings("unchecked")
   public static Object[] mapToArray(Map<String, Integer> map1, Map<String, Integer> map2) {
     List<JsonObject> array = new ArrayList<JsonObject>();
 
