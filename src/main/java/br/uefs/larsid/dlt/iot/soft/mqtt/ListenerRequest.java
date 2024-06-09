@@ -5,6 +5,8 @@ import br.uefs.larsid.dlt.iot.soft.utils.RequestDevicesScores;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +21,7 @@ public class ListenerRequest implements IMqttMessageListener {
   private static final String SENSORS = "SENSORS";
   private static final String SENSORS_RES = "SENSORS_RES/";
   private static final String SENSORS_FOG_RES = "SENSORS_FOG_RES/";
-  private static final String TOP_K_FOG_RES = "TOP_K_HEALTH_FOG_RES/";
+  private static final String TOP_K_RES = "TOP_K_HEALTH_RES/";
   private static final String GET_SENSORS = "GET sensors";
   private static final String GET_TOPK = "GET topk";
   private static final int QOS = 1;
@@ -129,9 +131,13 @@ public class ListenerRequest implements IMqttMessageListener {
         if (this.controllerImpl.getNode().getDevices().isEmpty()) {
           printlnDebug("Sorry, there are no devices connected.");
 
-          byte[] payload = "{}".toString().getBytes();
+          Map<String, Integer> scoreMapEmpty = new LinkedHashMap<String, Integer>();
+          List<Map<String, Integer>> mapList = new ArrayList<>();
+          mapList.add(scoreMapEmpty);
 
-          MQTTClientUp.publish(TOP_K_FOG_RES + id, payload, 1);
+          byte[] payload = mapList.toString().getBytes();
+
+          MQTTClientUp.publish(TOP_K_RES + id, payload, 1);
         } else {
           this.controllerImpl.setJsonGetTopK(jsonGetTopKDown);
 
