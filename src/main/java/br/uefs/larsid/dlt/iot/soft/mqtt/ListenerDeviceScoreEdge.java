@@ -8,17 +8,11 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import java.util.logging.Logger;
-
 /**
  *
  * @author João Erick Barbosa
  */
 public class ListenerDeviceScoreEdge implements IMqttMessageListener {
-
-  /*------------------------------ Constants ------------------------------*/ 
-  private static Logger log = Logger.getLogger(ListenerDeviceScoreEdge.class.getName());
-  /*-------------------------------------------------------------------------*/
 
   private boolean debugModeValue;
   private Controller controllerImpl;
@@ -70,12 +64,6 @@ public class ListenerDeviceScoreEdge implements IMqttMessageListener {
       this.controllerImpl.calculateTopKDown();
     }
         
-  }
-
-  private void printlnDebug(String str) {
-    if (isDebugModeValue()) {
-      log.info(str);
-    }
   }
 
   public boolean isDebugModeValue() {
